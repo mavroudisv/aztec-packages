@@ -14,7 +14,7 @@ struct AluEvent {
     uint32_t dst_addr;
     int a;
     int b;
-    int dst;
+    int res;
 };
 
 } // namespace bb::avm::simulation

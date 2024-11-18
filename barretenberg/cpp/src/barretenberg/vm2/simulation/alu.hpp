@@ -29,7 +29,7 @@ class Alu final {
                               .dst_addr = dst_addr,
                               .a = a,
                               .b = b,
-                              .dst = a + b });
+                              .res = a + b });
     }
 
   private:
