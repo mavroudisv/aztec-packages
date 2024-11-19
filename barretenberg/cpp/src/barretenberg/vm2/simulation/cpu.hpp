@@ -25,6 +25,7 @@ class Cpu final {
     {
         auto [a_addr, b_addr, dst_addr] =
             Addressing<3>(indirect).resolve({ a_operand, b_operand, dst_operand }, memory);
+
         alu.add(a_addr, b_addr, dst_addr);
 
         events.emit(CpuEvent{ .opcode = OpCode::ADD,

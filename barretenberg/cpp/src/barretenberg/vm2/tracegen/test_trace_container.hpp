@@ -10,8 +10,9 @@ namespace bb::avm::tracegen {
 class TestTraceContainer : public TraceContainer {
   public:
     using Row = AvmFullRow<FF>;
+    using RowTraceContainer = std::vector<Row>;
 
-    std::vector<Row> as_rows() const
+    RowTraceContainer as_rows() const
     {
         // Find the maximum size of any column.
         const size_t max_rows = [this]() {
@@ -23,7 +24,7 @@ class TestTraceContainer : public TraceContainer {
         }();
 
         // Write the values.
-        std::vector<Row> full_row_trace(max_rows);
+        RowTraceContainer full_row_trace(max_rows);
         for (const auto& [col, row_value] : trace) {
             for (const auto& [row, value] : row_value) {
                 full_row_trace[row].get_column(col) = value;

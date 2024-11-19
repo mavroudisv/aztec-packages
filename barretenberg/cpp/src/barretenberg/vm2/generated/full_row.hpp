@@ -11,10 +11,12 @@ namespace bb::avm {
 
 // TODO: This might just be used for testing!
 // TODO: Consider adding shifted entities as well.
+// TODO: we might not need this to be templated.
 // All unshifted entities.
 template <typename FF_> struct AvmFullRow {
     using FF = FF_;
 
+    // TODO: GCC may complain if there's no {}.
     FF UNSHIFTED_ENTITIES;
 
     // Risky but oh so efficient.

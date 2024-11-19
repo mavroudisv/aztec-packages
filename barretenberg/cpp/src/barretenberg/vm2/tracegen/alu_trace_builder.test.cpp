@@ -2,7 +2,6 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
-#include <list>
 
 #include "barretenberg/vm2/generated/flavor_settings.hpp"
 #include "barretenberg/vm2/generated/full_row.hpp"
@@ -35,6 +34,7 @@ TEST(AvmTraceGenAluTest, TraceGeneration)
                 ElementsAre(
                     // Only one row.
                     AllOf(Field(&R::alu_opcode, static_cast<uint8_t>(OpCode::ADD)),
+                          Field(&R::alu_sel_op_add, 1),
                           Field(&R::alu_a_addr, 0),
                           Field(&R::alu_b_addr, 1),
                           Field(&R::alu_dst_addr, 2),

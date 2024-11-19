@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <ranges>
+#include <span>
 #include <unordered_map>
 
 #include "barretenberg/vm2/generated/columns.hpp"
@@ -14,12 +15,20 @@ class TraceContainer {
   public:
     using FF = AvmFlavorSettings::FF;
 
-    void set(Column col, size_t row, FF&& value)
+    void set(Column col, size_t row, const FF& value)
     {
         if (value != 0) {
-            trace[col][row] = std::move(value);
+            trace[col][row] = value;
         } else {
             trace[col].erase(row);
+        }
+    }
+
+    // Bulk setting for a given row.
+    void set(size_t row, std::span<const std::pair<Column, FF>> values)
+    {
+        for (const auto& [col, value] : values) {
+            set(col, row, value);
         }
     }
 
