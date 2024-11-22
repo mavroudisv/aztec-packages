@@ -12,10 +12,10 @@ void Execution::add(uint32_t a_operand, uint32_t b_operand, uint32_t dst_operand
 
     alu.add(a_addr, b_addr, dst_addr);
 
-    events.emit(ExecutionEvent{ .opcode = ExecutionOpCode::ADD,
-                                .indirect = indirect,
-                                .operands = { a_operand, b_operand, dst_operand },
-                                .resolved_operands = { a_addr, b_addr, dst_addr } });
+    events.emit({ .opcode = ExecutionOpCode::ADD,
+                  .indirect = indirect,
+                  .operands = { a_operand, b_operand, dst_operand },
+                  .resolved_operands = { a_addr, b_addr, dst_addr } });
 }
 
 void Execution::call(uint32_t addr_operand, uint8_t indirect)
