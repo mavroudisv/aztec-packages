@@ -22,6 +22,7 @@ class TestTraceContainer : public TraceContainer {
         }
     }
 
+    // Returns a trace in dense format with properly filled in shifted columns.
     RowTraceContainer as_rows() const
     {
         // Find the maximum size of any column.
