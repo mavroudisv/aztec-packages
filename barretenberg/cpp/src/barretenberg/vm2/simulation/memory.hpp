@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <unordered_map>
 
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
@@ -14,17 +13,8 @@ class Memory final {
         : events(event_emitter)
     {}
 
-    void set(size_t index, int value)
-    {
-        memory[index] = value;
-        events.emit(MemoryEvent{ .mode = MemoryMode::WRITE, .addr = index, .value = value });
-    }
-    int get(size_t index) const
-    {
-        auto value = memory.at(index);
-        events.emit(MemoryEvent{ .mode = MemoryMode::READ, .addr = index, .value = value });
-        return value;
-    }
+    void set(size_t index, int value);
+    int get(size_t index) const;
 
   private:
     std::unordered_map<size_t, int> memory;

@@ -5,7 +5,7 @@
 
 namespace bb::avm::constraining {
 
-template <typename FF_> class cpuImpl {
+template <typename FF_> class executionImpl {
   public:
     using FF = FF_;
 
@@ -27,9 +27,9 @@ template <typename FF_> class cpuImpl {
     }
 };
 
-template <typename FF> class cpu : public Relation<cpuImpl<FF>> {
+template <typename FF> class execution : public Relation<executionImpl<FF>> {
   public:
-    static constexpr const char* NAME = "cpu";
+    static constexpr const char* NAME = "execution";
 
     static std::string get_subrelation_label(size_t index) { return std::to_string(index); }
 };

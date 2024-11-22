@@ -17,20 +17,7 @@ class Alu final {
     {}
 
     // Operands are expected to be direct.
-    void add(uint32_t a_addr, uint32_t b_addr, uint32_t dst_addr)
-    {
-        auto a = memory.get(a_addr);
-        auto b = memory.get(b_addr);
-        memory.set(dst_addr, a + b);
-
-        events.emit(AluEvent{ .opcode = OpCode::ADD,
-                              .a_addr = a_addr,
-                              .b_addr = b_addr,
-                              .dst_addr = dst_addr,
-                              .a = a,
-                              .b = b,
-                              .res = a + b });
-    }
+    void add(uint32_t a_addr, uint32_t b_addr, uint32_t dst_addr);
 
   private:
     Memory& memory;

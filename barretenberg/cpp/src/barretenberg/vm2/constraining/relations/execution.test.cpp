@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "barretenberg/vm2/constraining/relations/cpu.hpp"
+#include "barretenberg/vm2/constraining/relations/execution.hpp"
 #include "barretenberg/vm2/constraining/testing/check_relation.hpp"
 #include "barretenberg/vm2/generated/flavor_settings.hpp"
 #include "barretenberg/vm2/testing/macros.hpp"
@@ -16,7 +16,7 @@ using tracegen::TestTraceContainer;
 using FF = AvmFlavorSettings::FF;
 using C = Column;
 
-TEST(AvmConstrainingTest, CpuPositive)
+TEST(AvmConstrainingTest, ExecutionPositive)
 {
     // clang-format off
     TestTraceContainer trace({
@@ -25,10 +25,10 @@ TEST(AvmConstrainingTest, CpuPositive)
     });
     // clang-format on
 
-    check_relation<cpu<FF>>(trace.as_rows());
+    check_relation<execution<FF>>(trace.as_rows());
 }
 
-TEST(AvmConstrainingTest, CpuNegativePc)
+TEST(AvmConstrainingTest, ExecutionNegativePc)
 {
     // clang-format off
     TestTraceContainer trace({
@@ -37,7 +37,7 @@ TEST(AvmConstrainingTest, CpuNegativePc)
     });
     // clang-format on
 
-    EXPECT_THROW_WITH_MESSAGE(check_relation<cpu<FF>>(trace.as_rows(), 0), "subrelation 0.*row 0");
+    EXPECT_THROW_WITH_MESSAGE(check_relation<execution<FF>>(trace.as_rows(), 0), "subrelation 0.*row 0");
 }
 
 } // namespace
