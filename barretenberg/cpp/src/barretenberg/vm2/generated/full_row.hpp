@@ -12,23 +12,22 @@ namespace bb::avm {
 // TODO: This might just be used for testing!
 // TODO: Consider adding shifted entities as well.
 // TODO: we might not need this to be templated.
-// All unshifted entities.
 template <typename FF_> struct AvmFullRow {
     using FF = FF_;
 
     // TODO: GCC may complain if there's no {}.
-    FF UNSHIFTED_ENTITIES;
+    FF ALL_ENTITIES;
 
     // Risky but oh so efficient.
-    FF& get_column(Column col)
+    FF& get_column(ColumnAndShifts col)
     {
-        static_assert(sizeof(*this) == sizeof(FF) * static_cast<size_t>(Column::NUM_COLUMNS));
+        static_assert(sizeof(*this) == sizeof(FF) * static_cast<size_t>(ColumnAndShifts::NUM_COLUMNS));
         return reinterpret_cast<FF*>(this)[static_cast<size_t>(col)];
     }
 
-    const FF& get_column(Column col) const
+    const FF& get_column(ColumnAndShifts col) const
     {
-        static_assert(sizeof(*this) == sizeof(FF) * static_cast<size_t>(Column::NUM_COLUMNS));
+        static_assert(sizeof(*this) == sizeof(FF) * static_cast<size_t>(ColumnAndShifts::NUM_COLUMNS));
         return reinterpret_cast<FF*>(this)[static_cast<size_t>(col)];
     }
 };
