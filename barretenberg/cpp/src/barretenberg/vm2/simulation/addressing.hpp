@@ -3,7 +3,6 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 #include "barretenberg/vm2/simulation/events/addressing_event.hpp"
@@ -42,12 +41,7 @@ class Addressing final : public AddressingBase {
 
     std::vector<uint32_t> resolve_(uint16_t indirect,
                                    const std::vector<uint32_t>& offsets,
-                                   [[maybe_unused]] MemoryInterface& memory) const override
-    {
-        // TODO: Doesn't do anything right now, but it could access memory.
-        events.emit({ .indirect = indirect, .operands = offsets, .resolved_operands = offsets });
-        return offsets;
-    }
+                                   MemoryInterface& memory) const override;
 
   private:
     EventEmitterInterface<AddressingEvent>& events;
