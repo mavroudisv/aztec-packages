@@ -12,7 +12,7 @@ namespace bb::avm::simulation {
 
 class MockContextProvider : public ContextProviderInterface {
   public:
-    MOCK_METHOD(std::unique_ptr<Context>, make, (std::unique_ptr<MemoryInterface> memory), (const, override));
+    MOCK_METHOD(std::unique_ptr<Context>, make, (int contract_address, uint32_t call_id), (const, override));
 };
 
 } // namespace bb::avm::simulation

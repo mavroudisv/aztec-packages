@@ -24,10 +24,15 @@ void Execution::call(MemoryAddress addr_operand, uint8_t indirect)
     auto& memory = current_context().get_memory();
     auto [addr] = addressing.resolve<1>(indirect, { addr_operand }, memory);
 
-    // TODO: Implement call
+    // TODO: Maybe this should be done in a call gadget?
+    // I can't do much more than resolve with the current event.
     auto contract_address = memory.get(addr);
-    (void)contract_address;
-    // enter_context(context_provider.make());
+    enter_context(context_provider.make(contract_address, /*call_id=*/0));
+
+    events.emit({ .opcode = ExecutionOpCode::CALL,
+                  .indirect = indirect,
+                  .operands = { addr_operand },
+                  .resolved_operands = { addr } });
 }
 
 } // namespace bb::avm::simulation

@@ -38,7 +38,7 @@ class Execution final {
 
     AluInterface& alu;
     AddressingBase& addressing;
-    [[maybe_unused]] ContextProviderInterface& context_provider;
+    ContextProviderInterface& context_provider;
     EventEmitterInterface<ExecutionEvent>& events;
 };
 

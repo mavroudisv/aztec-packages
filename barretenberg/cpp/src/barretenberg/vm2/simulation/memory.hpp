@@ -32,20 +32,4 @@ class Memory : public MemoryInterface {
     EventEmitterInterface<MemoryEvent>& events;
 };
 
-// class MemoryProviderInterface {
-//   public:
-//     virtual ~MemoryProviderInterface() = default;
-//     virtual std::unique_ptr<MemoryInterface> make(uint32_t space_id,
-//                                                   EventEmitterInterface<MemoryEvent>& event_emitter) const = 0;
-// };
-
-// class MemoryProvider : public MemoryProviderInterface {
-//   public:
-//     std::unique_ptr<MemoryInterface> make(uint32_t space_id,
-//                                           EventEmitterInterface<MemoryEvent>& event_emitter) const override
-//     {
-//         return std::make_unique<Memory>(space_id, event_emitter);
-//     }
-// };
-
 } // namespace bb::avm::simulation

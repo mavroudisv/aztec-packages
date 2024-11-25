@@ -13,6 +13,7 @@ namespace bb::avm::simulation {
 // Order doesn't really matter as long as it's in sync with the circuit.
 enum class ExecutionOpCode {
     ADD,
+    CALL,
 };
 
 struct ExecutionEvent {
