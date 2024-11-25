@@ -5,15 +5,16 @@
 
 namespace bb::avm::simulation {
 
-void Memory::set(size_t index, int value)
+void Memory::set(MemoryAddress index, MemoryValue value)
 {
     memory[index] = value;
-    events.emit({ .mode = MemoryMode::WRITE, .addr = index, .value = value });
+    events.emit({ .mode = MemoryMode::WRITE, .addr = index, .value = value, .space_id = space_id });
 }
-int Memory::get(size_t index) const
+
+MemoryValue Memory::get(MemoryAddress index) const
 {
     auto value = memory.at(index);
-    events.emit({ .mode = MemoryMode::READ, .addr = index, .value = value });
+    events.emit({ .mode = MemoryMode::READ, .addr = index, .value = value, .space_id = space_id });
     return value;
 }
 

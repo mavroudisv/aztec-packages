@@ -1,5 +1,6 @@
 #include "barretenberg/vm2/simulation/addressing.hpp"
 
+#include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/simulation/events/addressing_event.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/memory.hpp"
@@ -7,12 +8,12 @@
 
 namespace bb::avm::simulation {
 
-std::vector<uint32_t> Addressing::resolve_(uint16_t indirect,
-                                           const std::vector<uint32_t>& offsets,
-                                           MemoryInterface& memory) const
+std::vector<MemoryAddress> Addressing::resolve_(uint16_t indirect,
+                                                const std::vector<MemoryAddress>& offsets,
+                                                MemoryInterface& memory) const
 {
     const size_t num_operands = offsets.size();
-    std::vector<uint32_t> resolved(num_operands);
+    std::vector<MemoryAddress> resolved(num_operands);
 
     for (size_t i = 0; i < offsets.size(); ++i) {
         resolved[i] = offsets[i];

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/common/opcodes.hpp"
 
 namespace bb::avm::simulation {
@@ -13,12 +14,12 @@ enum class AluOperation {
 
 struct AluEvent {
     AluOperation operation;
-    uint32_t a_addr;
-    uint32_t b_addr;
-    uint32_t dst_addr;
-    int a;
-    int b;
-    int res;
+    MemoryAddress a_addr;
+    MemoryAddress b_addr;
+    MemoryAddress dst_addr;
+    MemoryValue a;
+    MemoryValue b;
+    MemoryValue res;
 };
 
 } // namespace bb::avm::simulation

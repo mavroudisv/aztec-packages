@@ -12,7 +12,7 @@ namespace {
 TEST(AvmSimulationAluTest, Add)
 {
     DiscardingEventEmitter<MemoryEvent> emitter;
-    Memory mem(emitter);
+    Memory mem(/*space_id=*/0, emitter);
     EventEmitter<AluEvent> alu_event_emitter;
     Alu alu(mem, alu_event_emitter);
 

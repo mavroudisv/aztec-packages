@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <vector>
 
+#include "barretenberg/vm2/common/memory_types.hpp"
+
 namespace bb::avm::simulation {
 
 enum class MemoryMode {
@@ -12,8 +14,9 @@ enum class MemoryMode {
 
 struct MemoryEvent {
     MemoryMode mode;
-    size_t addr;
-    int value;
+    MemoryAddress addr;
+    MemoryValue value;
+    uint32_t space_id;
 };
 
 } // namespace bb::avm::simulation

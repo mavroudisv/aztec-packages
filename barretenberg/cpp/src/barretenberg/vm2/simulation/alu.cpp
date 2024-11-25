@@ -5,7 +5,7 @@
 
 namespace bb::avm::simulation {
 
-void Alu::add(uint32_t a_addr, uint32_t b_addr, uint32_t dst_addr)
+void Alu::add(MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
     auto a = memory.get(a_addr);
     auto b = memory.get(b_addr);

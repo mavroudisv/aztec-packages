@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/common/opcodes.hpp"
 
 namespace bb::avm::simulation {
@@ -17,8 +18,8 @@ enum class ExecutionOpCode {
 struct ExecutionEvent {
     ExecutionOpCode opcode;
     uint16_t indirect;
-    std::vector<uint32_t> operands;
-    std::vector<uint32_t> resolved_operands;
+    std::vector<MemoryAddress> operands;
+    std::vector<MemoryAddress> resolved_operands;
 
     // Needed for testing matchers.
     bool operator==(const ExecutionEvent& other) const = default;
