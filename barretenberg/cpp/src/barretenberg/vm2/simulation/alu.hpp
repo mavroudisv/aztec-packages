@@ -9,18 +9,24 @@
 
 namespace bb::avm::simulation {
 
-class Alu final {
+class AluInterface {
   public:
-    Alu(Memory& mem, EventEmitterInterface<AluEvent>& event_emitter)
+    virtual ~AluInterface() = default;
+    virtual void add(uint32_t a_addr, uint32_t b_addr, uint32_t dst_addr) = 0;
+};
+
+class Alu : public AluInterface {
+  public:
+    Alu(MemoryInterface& mem, EventEmitterInterface<AluEvent>& event_emitter)
         : memory(mem)
         , events(event_emitter)
     {}
 
     // Operands are expected to be direct.
-    void add(uint32_t a_addr, uint32_t b_addr, uint32_t dst_addr);
+    void add(uint32_t a_addr, uint32_t b_addr, uint32_t dst_addr) override;
 
   private:
-    Memory& memory;
+    MemoryInterface& memory;
     EventEmitterInterface<AluEvent>& events;
 };
 

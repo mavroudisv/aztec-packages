@@ -19,6 +19,9 @@ struct ExecutionEvent {
     uint16_t indirect;
     std::vector<uint32_t> operands;
     std::vector<uint32_t> resolved_operands;
+
+    // Needed for testing matchers.
+    bool operator==(const ExecutionEvent& other) const = default;
 };
 
 } // namespace bb::avm::simulation

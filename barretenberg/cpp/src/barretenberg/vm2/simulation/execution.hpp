@@ -12,14 +12,13 @@ namespace bb::avm::simulation {
 
 class Execution final {
   public:
-    // TODO: receive an AddressingProvider.
-    Execution(Memory& mem,
-              Alu& alu,
-              AddressingProvider& addressing_provider,
+    Execution(MemoryInterface& mem,
+              AluInterface& alu,
+              AddressingBase& addressing,
               EventEmitterInterface<ExecutionEvent>& event_emitter)
         : memory(mem)
         , alu(alu)
-        , addressing_provider(addressing_provider)
+        , addressing(addressing)
         , events(event_emitter)
     {}
 
@@ -27,9 +26,9 @@ class Execution final {
     void call(uint32_t addr_operand, uint8_t indirect);
 
   private:
-    Memory& memory;
-    Alu& alu;
-    AddressingProvider& addressing_provider;
+    MemoryInterface& memory;
+    AluInterface& alu;
+    AddressingBase& addressing;
     EventEmitterInterface<ExecutionEvent>& events;
 };
 

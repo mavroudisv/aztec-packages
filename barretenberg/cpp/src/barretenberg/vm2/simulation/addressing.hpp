@@ -1,6 +1,10 @@
 #pragma once
 
 #include <array>
+#include <cassert>
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 #include "barretenberg/vm2/simulation/events/addressing_event.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
@@ -8,34 +12,42 @@
 
 namespace bb::avm::simulation {
 
-// TODO: Make this class emit events.
-template <size_t N> class Addressing final {
+class AddressingBase {
   public:
-    Addressing(uint16_t indirect, EventEmitterInterface<AddressingEvent>& event_emitter)
-        : indirect(indirect)
-        , events(event_emitter)
-    {}
+    virtual ~AddressingBase() = default;
+    // We need this method to be non-templated so that we can mock it.
+    virtual std::vector<uint32_t> resolve_(uint16_t indirect,
+                                           const std::vector<uint32_t>& offsets,
+                                           MemoryInterface& memory) const = 0;
 
-    std::array<uint32_t, N> resolve(const std::array<uint32_t, N>& offsets, [[maybe_unused]] Memory& memory) const
+    // Convenience function that returns an array so that it can be destructured.
+    template <size_t N>
+    std::array<uint32_t, N> resolve(uint16_t indirect,
+                                    const std::array<uint32_t, N>& offsets,
+                                    MemoryInterface& memory) const
     {
-        // TODO: Doesn't do anything right now, but it could access memory.
-        events.emit({ .indirect = indirect,
-                      .operands = std::vector(offsets.begin(), offsets.end()),
-                      .resolved_operands = std::vector(offsets.begin(), offsets.end()) });
-        return offsets;
+        assert(offsets.size() == N);
+        auto resolved = resolve_(indirect, std::vector(offsets.begin(), offsets.end()), memory);
+        std::array<uint32_t, N> result;
+        std::copy(resolved.begin(), resolved.end(), result.begin());
+        return result;
     }
-
-  private:
-    uint16_t indirect;
-    EventEmitterInterface<AddressingEvent>& events;
 };
 
-class AddressingProvider final {
+class Addressing final : public AddressingBase {
   public:
-    AddressingProvider(EventEmitterInterface<AddressingEvent>& event_emitter)
+    Addressing(EventEmitterInterface<AddressingEvent>& event_emitter)
         : events(event_emitter)
     {}
-    template <size_t N> Addressing<N> get(uint16_t indirect) { return Addressing<N>(indirect, events); }
+
+    std::vector<uint32_t> resolve_(uint16_t indirect,
+                                   const std::vector<uint32_t>& offsets,
+                                   [[maybe_unused]] MemoryInterface& memory) const override
+    {
+        // TODO: Doesn't do anything right now, but it could access memory.
+        events.emit({ .indirect = indirect, .operands = offsets, .resolved_operands = offsets });
+        return offsets;
+    }
 
   private:
     EventEmitterInterface<AddressingEvent>& events;
