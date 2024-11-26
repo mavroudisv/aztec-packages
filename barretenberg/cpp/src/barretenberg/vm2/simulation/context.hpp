@@ -9,18 +9,29 @@
 
 namespace bb::avm::simulation {
 
-class Context final {
+class ContextInterface {
+  public:
+    virtual ~ContextInterface() = default;
+    virtual MemoryInterface& get_memory() = 0;
+    virtual uint32_t get_pc() const = 0;
+    virtual void set_pc(uint32_t new_pc) = 0;
+    virtual uint32_t get_next_pc() const = 0;
+    virtual void set_next_pc(uint32_t new_next_pc) = 0;
+};
+
+class Context : public ContextInterface {
   public:
     Context(std::unique_ptr<MemoryInterface> memory)
         : memory(std::move(memory))
     {}
 
+    // Having getters and setters make it easier to mock the context.
     // Machine state.
-    MemoryInterface& get_memory() { return *memory; }
-    uint32_t get_pc() const { return pc; }
-    void set_pc(uint32_t new_pc) { pc = new_pc; }
-    uint32_t get_next_pc() const { return next_pc; }
-    void set_next_pc(uint32_t new_next_pc) { next_pc = new_next_pc; }
+    MemoryInterface& get_memory() override { return *memory; }
+    uint32_t get_pc() const override { return pc; }
+    void set_pc(uint32_t new_pc) override { pc = new_pc; }
+    uint32_t get_next_pc() const override { return next_pc; }
+    void set_next_pc(uint32_t new_next_pc) override { next_pc = new_next_pc; }
 
   private:
     uint32_t pc = 0;
@@ -31,7 +42,7 @@ class Context final {
 class ContextProviderInterface {
   public:
     virtual ~ContextProviderInterface() = default;
-    virtual std::unique_ptr<Context> make(int contract_address, uint32_t call_id) const = 0;
+    virtual std::unique_ptr<ContextInterface> make(int contract_address, uint32_t call_id) const = 0;
 };
 
 // This is the real thing. If you need a context made out of other objects, use a mock.
@@ -40,9 +51,9 @@ class ContextProvider : public ContextProviderInterface {
     ContextProvider(EventEmitterInterface<MemoryEvent>& memory_events)
         : memory_events(memory_events)
     {}
-    std::unique_ptr<Context> make(int contract_address, [[maybe_unused]] uint32_t call_id) const override
+    std::unique_ptr<ContextInterface> make([[maybe_unused]] int contract_address, uint32_t call_id) const override
     {
-        return std::make_unique<Context>(std::make_unique<Memory>(contract_address, memory_events));
+        return std::make_unique<Context>(std::make_unique<Memory>(call_id, memory_events));
     }
 
   private:

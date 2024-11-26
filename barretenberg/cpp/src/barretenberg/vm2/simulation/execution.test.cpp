@@ -19,6 +19,7 @@ namespace {
 using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 TEST(AvmSimulationExecutionTest, Add)
 {
@@ -26,11 +27,15 @@ TEST(AvmSimulationExecutionTest, Add)
     MockAddressing addressing;
     MockContextProvider context_provider;
 
+    MockMemory memory;
+    auto context = std::make_unique<MockContext>();
+    EXPECT_CALL(*context, get_memory()).WillRepeatedly(ReturnRef(memory));
+    // FIXME: it doesn't make sense to have to test/provide pc here.
+    EXPECT_CALL(*context, get_pc()).WillRepeatedly(Return(0));
+
     EXPECT_CALL(addressing, resolve_(/*indirect=*/0, std::vector<MemoryAddress>{ 1, 2, 3 }, _))
         .WillOnce(Return(std::vector<MemoryAddress>{ 4, 5, 6 }));
     EXPECT_CALL(alu, add(4, 5, 6));
-
-    auto context = std::make_unique<Context>(std::make_unique<MockMemory>());
 
     EventEmitter<ExecutionEvent> execution_event_emitter;
     Execution execution(alu, addressing, context_provider, execution_event_emitter);

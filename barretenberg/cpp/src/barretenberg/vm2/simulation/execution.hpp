@@ -26,7 +26,7 @@ class Execution final {
         , events(event_emitter)
     {}
 
-    void enter_context(std::unique_ptr<Context> context) { context_stack.push(std::move(context)); }
+    void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
     void run();
 
     void add(MemoryAddress a_operand, MemoryAddress b_operand, MemoryAddress dst_operand, uint8_t indirect);
@@ -34,9 +34,9 @@ class Execution final {
     void call(MemoryAddress addr_operand, uint8_t indirect);
 
   private:
-    Context& current_context() { return *context_stack.top(); }
+    ContextInterface& current_context() { return *context_stack.top(); }
 
-    std::stack<std::unique_ptr<Context>> context_stack;
+    std::stack<std::unique_ptr<ContextInterface>> context_stack;
 
     AluInterface& alu;
     AddressingBase& addressing;

@@ -12,6 +12,7 @@ void Execution::add(MemoryAddress a_operand, MemoryAddress b_operand, MemoryAddr
     auto& memory = current_context().get_memory();
     auto [a_addr, b_addr, dst_addr] = addressing.resolve<3>(indirect, { a_operand, b_operand, dst_operand }, memory);
 
+    // TODO: track interaction.
     alu.add(a_addr, b_addr, dst_addr);
 
     // TODO: this is repeated and should pc be here?
@@ -67,12 +68,14 @@ void Execution::run()
         auto& context = current_context();
         auto pc = context.get_pc();
 
+        // FIXME: this is a placeholder.
         ExecutionOpCode opcode = ExecutionOpCode::ADD;
         std::vector<uint8_t> operands = { 0, 1, 2, 3 };
         uint32_t instruction_size = 4;
-        uint32_t next_pc = pc + instruction_size;
+        context.set_next_pc(pc + instruction_size);
 
         // TODO: maybe have parsing turn the opcode to the canonical/execution opcode form.
+        // TODO: consider passing context.
         switch (opcode) {
         case ExecutionOpCode::ADD:
             add(operands[1], operands[2], operands[3], /*indirect=*/operands[0]);
@@ -88,7 +91,7 @@ void Execution::run()
             throw std::runtime_error("Unknown opcode");
         }
 
-        context.set_pc(next_pc);
+        context.set_pc(context.get_next_pc());
     }
 }
 
