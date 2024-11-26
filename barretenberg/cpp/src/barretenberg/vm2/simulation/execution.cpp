@@ -1,64 +1,40 @@
 #include "barretenberg/vm2/simulation/execution.hpp"
+#include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/common/opcodes.hpp"
 #include "barretenberg/vm2/simulation/addressing.hpp"
 #include "barretenberg/vm2/simulation/events/execution_event.hpp"
 
+#include <bits/utility.h>
 #include <cstdint>
+#include <functional>
 
 namespace bb::avm::simulation {
 
-void Execution::add(MemoryAddress a_operand, MemoryAddress b_operand, MemoryAddress dst_operand, uint8_t indirect)
+void Execution::add(MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
-    auto& memory = current_context().get_memory();
-    auto [a_addr, b_addr, dst_addr] = addressing.resolve<3>(indirect, { a_operand, b_operand, dst_operand }, memory);
-
     // TODO: track interaction.
     alu.add(a_addr, b_addr, dst_addr);
-
-    // TODO: this is repeated and should pc be here?
-    auto pc = current_context().get_pc();
-    events.emit({ .pc = pc,
-                  .opcode = ExecutionOpCode::ADD,
-                  .indirect = indirect,
-                  .operands = { a_operand, b_operand, dst_operand },
-                  .resolved_operands = { a_addr, b_addr, dst_addr } });
 }
 
-void Execution::call(MemoryAddress addr_operand, uint8_t indirect)
+void Execution::call(MemoryAddress addr)
 {
     auto& memory = current_context().get_memory();
-    auto [addr] = addressing.resolve<1>(indirect, { addr_operand }, memory);
 
     // TODO: Maybe this should be done in a call gadget?
     // I can't do much more than resolve with the current event.
     auto contract_address = memory.get(addr);
     enter_context(context_provider.make(contract_address.value, /*call_id=*/0));
-
-    auto pc = current_context().get_pc();
-    events.emit({ .pc = pc,
-                  .opcode = ExecutionOpCode::CALL,
-                  .indirect = indirect,
-                  .operands = { addr_operand },
-                  .resolved_operands = { addr } });
 }
 
-void Execution::jumpi(uint32_t loc, MemoryAddress cond, uint8_t indirect)
+void Execution::jumpi(uint32_t loc, MemoryAddress cond_addr)
 {
     auto& memory = current_context().get_memory();
-    auto [cond_addr] = addressing.resolve<1>(indirect, { cond }, memory);
 
     // TODO: in gadget.
     auto resolved_cond = memory.get(cond_addr);
     if (resolved_cond.value != 0) {
         current_context().set_next_pc(loc);
     }
-
-    auto pc = current_context().get_pc();
-    events.emit({ .pc = pc,
-                  .opcode = ExecutionOpCode::JUMPI,
-                  .indirect = indirect,
-                  .operands = { loc, cond },
-                  .resolved_operands = { loc, cond_addr } });
 }
 
 void Execution::run()
@@ -66,33 +42,63 @@ void Execution::run()
     // TODO: This would only execute one enqueued call.
     while (!context_stack.empty()) {
         auto& context = current_context();
+        auto& memory = current_context().get_memory();
         auto pc = context.get_pc();
 
         // FIXME: this is a placeholder.
         ExecutionOpCode opcode = ExecutionOpCode::ADD;
-        std::vector<uint8_t> operands = { 0, 1, 2, 3 };
+        uint8_t indirect = 0;
+        std::vector<MemoryAddress> operands = { 0, 1, 2, 3 };
         uint32_t instruction_size = 4;
+        size_t num_addresses_to_resolve = 3;
         context.set_next_pc(pc + instruction_size);
 
-        // TODO: maybe have parsing turn the opcode to the canonical/execution opcode form.
+        // By this point we assume that the opcode is one of the valid execution opcodes.
+        // TODO: catch failure.
+        auto resolved_operands = addressing.resolve(indirect, operands, num_addresses_to_resolve, memory);
         // TODO: consider passing context.
-        switch (opcode) {
-        case ExecutionOpCode::ADD:
-            add(operands[1], operands[2], operands[3], /*indirect=*/operands[0]);
-            break;
-        case ExecutionOpCode::CALL:
-            call(operands[0], /*indirect=*/operands[1]);
-            break;
-        case ExecutionOpCode::JUMPI:
-            jumpi(operands[0], operands[1], operands[2]);
-            break;
-        default:
-            // TODO: should be caught by parsing.
-            throw std::runtime_error("Unknown opcode");
-        }
+        dispatch_opcode(opcode, resolved_operands);
+
+        events.emit({ .pc = pc,
+                      .opcode = opcode,
+                      .indirect = indirect,
+                      .operands = operands,
+                      .resolved_operands = resolved_operands });
 
         context.set_pc(context.get_next_pc());
     }
+}
+
+void Execution::dispatch_opcode(ExecutionOpCode opcode, const std::vector<MemoryAddress>& resolved_operands)
+{
+    switch (opcode) {
+    case ExecutionOpCode::ADD:
+        call_with_operands(&Execution::add, resolved_operands);
+        break;
+    case ExecutionOpCode::CALL:
+        call_with_operands(&Execution::call, resolved_operands);
+        break;
+    case ExecutionOpCode::JUMPI:
+        call_with_operands(&Execution::jumpi, resolved_operands);
+        break;
+    default:
+        // TODO: should be caught by parsing.
+        throw std::runtime_error("Unknown opcode");
+    }
+}
+
+// Some template magic to dispatch the opcode by deducing the number of arguments and types,
+// and making the appropriate checks and casts.
+template <typename... Ts>
+inline void Execution::call_with_operands(void (Execution::*f)(Ts...),
+                                          const std::vector<MemoryAddress>& resolved_operands)
+{
+    assert(resolved_operands.size() == sizeof...(Ts));
+    auto operand_indices = std::make_index_sequence<sizeof...(Ts)>{};
+    using types = std::tuple<Ts...>;
+    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+        (this->*f)(static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
+    }(operand_indices);
 }
 
 } // namespace bb::avm::simulation

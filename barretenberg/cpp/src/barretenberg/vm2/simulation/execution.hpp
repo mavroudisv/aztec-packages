@@ -29,12 +29,16 @@ class Execution final {
     void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
     void run();
 
-    void add(MemoryAddress a_operand, MemoryAddress b_operand, MemoryAddress dst_operand, uint8_t indirect);
-    void jumpi(uint32_t loc, MemoryAddress cond, uint8_t indirect);
-    void call(MemoryAddress addr_operand, uint8_t indirect);
+    void add(MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr);
+    void jumpi(uint32_t loc, MemoryAddress cond_addr);
+    void call(MemoryAddress addr);
 
   private:
     ContextInterface& current_context() { return *context_stack.top(); }
+
+    void dispatch_opcode(ExecutionOpCode opcode, const std::vector<MemoryAddress>& resolved_operands);
+    template <typename... Ts>
+    void call_with_operands(void (Execution::*f)(Ts...), const std::vector<MemoryAddress>& resolved_operands);
 
     std::stack<std::unique_ptr<ContextInterface>> context_stack;
 

@@ -103,4 +103,13 @@ enum class WireOpCode {
     LAST_OPCODE_SENTINEL,
 };
 
+// List of opcodes that can be executed.
+// This is like WireOpCode but without the variants.
+// Order doesn't really matter as long as it's in sync with the circuit.
+enum class ExecutionOpCode {
+    ADD,
+    CALL,
+    JUMPI,
+};
+
 } // namespace bb::avm

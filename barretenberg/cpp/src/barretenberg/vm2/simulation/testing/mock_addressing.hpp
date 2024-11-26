@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <gmock/gmock.h>
 
 #include <array>
@@ -16,8 +17,11 @@ class MockAddressing final : public AddressingBase {
   public:
     MockAddressing() = default;
     MOCK_METHOD(std::vector<MemoryAddress>,
-                resolve_,
-                (uint16_t indirect, const std::vector<MemoryAddress>& offsets, MemoryInterface& memory),
+                resolve,
+                (uint16_t indirect,
+                 const std::vector<MemoryAddress>& offsets,
+                 size_t num_addreses_to_resolve,
+                 MemoryInterface& memory),
                 (const override));
 };
 
