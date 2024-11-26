@@ -27,8 +27,10 @@ class Execution final {
     {}
 
     void enter_context(std::unique_ptr<Context> context) { context_stack.push(std::move(context)); }
+    void run();
 
     void add(MemoryAddress a_operand, MemoryAddress b_operand, MemoryAddress dst_operand, uint8_t indirect);
+    void jumpi(uint32_t loc, MemoryAddress cond, uint8_t indirect);
     void call(MemoryAddress addr_operand, uint8_t indirect);
 
   private:

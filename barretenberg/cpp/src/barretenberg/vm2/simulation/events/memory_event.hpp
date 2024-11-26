@@ -16,6 +16,7 @@ struct MemoryEvent {
     MemoryMode mode;
     MemoryAddress addr;
     MemoryValue value;
+    MemoryTag tag;
     uint32_t space_id;
 };
 

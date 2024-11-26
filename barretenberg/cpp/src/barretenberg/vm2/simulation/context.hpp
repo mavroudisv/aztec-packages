@@ -18,9 +18,13 @@ class Context final {
     // Machine state.
     MemoryInterface& get_memory() { return *memory; }
     uint32_t get_pc() const { return pc; }
+    void set_pc(uint32_t new_pc) { pc = new_pc; }
+    uint32_t get_next_pc() const { return next_pc; }
+    void set_next_pc(uint32_t new_next_pc) { next_pc = new_next_pc; }
 
   private:
     uint32_t pc = 0;
+    uint32_t next_pc = 0;
     std::unique_ptr<MemoryInterface> memory;
 };
 

@@ -7,17 +7,20 @@ namespace bb::avm::simulation {
 
 void Alu::add(MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
+    // TODO: check types and tags and propagate.
     auto a = memory.get(a_addr);
     auto b = memory.get(b_addr);
-    memory.set(dst_addr, a + b);
+    auto c = a.value + b.value;
+    memory.set(dst_addr, c, a.tag);
 
+    // TODO: add tags to events.
     events.emit({ .operation = AluOperation::ADD,
                   .a_addr = a_addr,
                   .b_addr = b_addr,
                   .dst_addr = dst_addr,
-                  .a = a,
-                  .b = b,
-                  .res = a + b });
+                  .a = a.value,
+                  .b = b.value,
+                  .res = c });
 }
 
 } // namespace bb::avm::simulation

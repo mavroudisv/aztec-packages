@@ -5,17 +5,18 @@
 
 namespace bb::avm::simulation {
 
-void Memory::set(MemoryAddress index, MemoryValue value)
+void Memory::set(MemoryAddress index, MemoryValue value, MemoryTag tag)
 {
-    memory[index] = value;
-    events.emit({ .mode = MemoryMode::WRITE, .addr = index, .value = value, .space_id = space_id });
+    // TODO: validate tag-value makes sense.
+    memory[index] = { value, tag };
+    events.emit({ .mode = MemoryMode::WRITE, .addr = index, .value = value, .tag = tag, .space_id = space_id });
 }
 
-MemoryValue Memory::get(MemoryAddress index) const
+ValueAndTag Memory::get(MemoryAddress index) const
 {
-    auto value = memory.at(index);
-    events.emit({ .mode = MemoryMode::READ, .addr = index, .value = value, .space_id = space_id });
-    return value;
+    auto vt = memory.at(index);
+    events.emit({ .mode = MemoryMode::READ, .addr = index, .value = vt.value, .tag = vt.tag, .space_id = space_id });
+    return vt;
 }
 
 } // namespace bb::avm::simulation

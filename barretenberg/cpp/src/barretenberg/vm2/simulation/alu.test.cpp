@@ -21,12 +21,14 @@ TEST(AvmSimulationAluTest, Add)
     uint32_t b_addr = 1;
     uint32_t dst_addr = 2;
 
-    mem.set(a_addr, 1);
-    mem.set(b_addr, 2);
+    mem.set(a_addr, 1, MemoryTag::U32);
+    mem.set(b_addr, 2, MemoryTag::U32);
 
     alu.add(a_addr, b_addr, dst_addr);
 
-    EXPECT_EQ(mem.get(dst_addr), 3);
+    auto c = mem.get(dst_addr);
+    EXPECT_EQ(c.value, 3);
+    EXPECT_EQ(c.tag, MemoryTag::U32);
 }
 
 } // namespace

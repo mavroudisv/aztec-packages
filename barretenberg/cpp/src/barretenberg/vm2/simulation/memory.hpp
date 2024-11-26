@@ -9,11 +9,22 @@
 
 namespace bb::avm::simulation {
 
+struct ValueAndTag {
+    MemoryValue value;
+    MemoryTag tag;
+};
+
 class MemoryInterface {
   public:
     virtual ~MemoryInterface() = default;
-    virtual void set(MemoryAddress index, MemoryValue value) = 0;
-    virtual MemoryValue get(MemoryAddress index) const = 0;
+    virtual void set(MemoryAddress index, MemoryValue value, MemoryTag tag) = 0;
+    virtual ValueAndTag get(MemoryAddress index) const = 0;
+
+    static bool is_valid_address(ValueAndTag address)
+    {
+        // TODO: consider adding < 2^32 once we change memory value types.
+        return address.tag == MemoryTag::U32;
+    }
 };
 
 class Memory : public MemoryInterface {
@@ -23,12 +34,12 @@ class Memory : public MemoryInterface {
         , events(event_emitter)
     {}
 
-    void set(MemoryAddress index, MemoryValue value) override;
-    MemoryValue get(MemoryAddress index) const override;
+    void set(MemoryAddress index, MemoryValue value, MemoryTag tag) override;
+    ValueAndTag get(MemoryAddress index) const override;
 
   private:
     uint32_t space_id;
-    std::unordered_map<size_t, int> memory;
+    std::unordered_map<size_t, ValueAndTag> memory;
     EventEmitterInterface<MemoryEvent>& events;
 };
 
