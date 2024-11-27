@@ -29,6 +29,22 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
     enter_context(context_provider.make(contract_address.value, /*call_id=*/0));
 }
 
+void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryAddress ret_size_offset)
+{
+    auto& memory = context.get_memory();
+
+    // TODO: check tags and types (only for size, the return data is converted to FF).
+    size_t size = static_cast<size_t>(memory.get(ret_size_offset).value);
+    auto [values, _] = memory.get_slice(ret_offset, size);
+
+    context_stack.pop();
+    if (!context_stack.empty()) {
+        auto& context = current_context();
+        // TODO: We'll need more than just the return data. E.g., the space id, address and size.
+        context.set_nested_returndata(std::vector<FF>(values.begin(), values.end()));
+    }
+}
+
 void Execution::jumpi(ContextInterface& context, uint32_t loc, MemoryAddress cond_addr)
 {
     auto& memory = context.get_memory();
@@ -80,6 +96,9 @@ void Execution::dispatch_opcode(ExecutionOpCode opcode, const std::vector<Memory
         break;
     case ExecutionOpCode::CALL:
         call_with_operands(&Execution::call, resolved_operands);
+        break;
+    case ExecutionOpCode::RETURN:
+        call_with_operands(&Execution::ret, resolved_operands);
         break;
     case ExecutionOpCode::JUMPI:
         call_with_operands(&Execution::jumpi, resolved_operands);

@@ -110,6 +110,7 @@ enum class ExecutionOpCode {
     ADD,
     CALL,
     JUMPI,
+    RETURN,
 };
 
 } // namespace bb::avm

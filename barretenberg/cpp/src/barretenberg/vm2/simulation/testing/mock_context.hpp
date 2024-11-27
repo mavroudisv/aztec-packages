@@ -17,6 +17,7 @@ class MockContext : public ContextInterface {
     MOCK_METHOD(void, set_pc, (uint32_t new_pc), (override));
     MOCK_METHOD(uint32_t, get_next_pc, (), (const, override));
     MOCK_METHOD(void, set_next_pc, (uint32_t new_next_pc), (override));
+    MOCK_METHOD(void, set_nested_returndata, (std::vector<FF> && return_data), (override));
 };
 
 class MockContextProvider : public ContextProviderInterface {

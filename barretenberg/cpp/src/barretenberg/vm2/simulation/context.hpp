@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "barretenberg/vm2/common/field.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/events/memory_event.hpp"
 #include "barretenberg/vm2/simulation/memory.hpp"
@@ -17,6 +18,7 @@ class ContextInterface {
     virtual void set_pc(uint32_t new_pc) = 0;
     virtual uint32_t get_next_pc() const = 0;
     virtual void set_next_pc(uint32_t new_next_pc) = 0;
+    virtual void set_nested_returndata(std::vector<FF>&& return_data) = 0;
 };
 
 class Context : public ContextInterface {
@@ -32,10 +34,12 @@ class Context : public ContextInterface {
     void set_pc(uint32_t new_pc) override { pc = new_pc; }
     uint32_t get_next_pc() const override { return next_pc; }
     void set_next_pc(uint32_t new_next_pc) override { next_pc = new_next_pc; }
+    void set_nested_returndata(std::vector<FF>&& return_data) override { nested_returndata = std::move(return_data); }
 
   private:
     uint32_t pc = 0;
     uint32_t next_pc = 0;
+    std::vector<FF> nested_returndata;
     std::unique_ptr<MemoryInterface> memory;
 };
 

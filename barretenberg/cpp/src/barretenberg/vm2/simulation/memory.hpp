@@ -17,8 +17,13 @@ struct ValueAndTag {
 class MemoryInterface {
   public:
     virtual ~MemoryInterface() = default;
+
     virtual void set(MemoryAddress index, MemoryValue value, MemoryTag tag) = 0;
     virtual ValueAndTag get(MemoryAddress index) const = 0;
+    virtual std::pair<std::vector<MemoryValue>, std::vector<MemoryTag>> get_slice(MemoryAddress start,
+                                                                                  size_t size) const = 0;
+
+    virtual uint32_t get_space_id() const = 0;
 
     static bool is_valid_address(ValueAndTag address)
     {
@@ -36,6 +41,10 @@ class Memory : public MemoryInterface {
 
     void set(MemoryAddress index, MemoryValue value, MemoryTag tag) override;
     ValueAndTag get(MemoryAddress index) const override;
+    std::pair<std::vector<MemoryValue>, std::vector<MemoryTag>> get_slice(MemoryAddress start,
+                                                                          size_t size) const override;
+
+    uint32_t get_space_id() const override { return space_id; }
 
   private:
     uint32_t space_id;

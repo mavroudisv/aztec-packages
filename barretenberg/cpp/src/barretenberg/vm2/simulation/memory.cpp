@@ -19,4 +19,16 @@ ValueAndTag Memory::get(MemoryAddress index) const
     return vt;
 }
 
+std::pair<std::vector<MemoryValue>, std::vector<MemoryTag>> Memory::get_slice(MemoryAddress start, size_t size) const
+{
+    std::vector<MemoryValue> values(size);
+    std::vector<MemoryTag> tags(size);
+    for (size_t i = 0; i < size; ++i) {
+        auto vt = get(start + i);
+        values[i] = vt.value;
+        tags[i] = vt.tag;
+    }
+    return { std::move(values), std::move(tags) };
+}
+
 } // namespace bb::avm::simulation

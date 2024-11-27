@@ -4,6 +4,7 @@
 #include <memory>
 #include <stack>
 
+#include "barretenberg/vm2/common/field.hpp"
 #include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/simulation/addressing.hpp"
 #include "barretenberg/vm2/simulation/alu.hpp"
@@ -26,15 +27,17 @@ class Execution final {
         , events(event_emitter)
     {}
 
-    void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
     void run();
 
     void add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr);
     void jumpi(ContextInterface& context, uint32_t loc, MemoryAddress cond_addr);
     void call(ContextInterface& context, MemoryAddress addr);
+    void ret(ContextInterface& context, MemoryAddress ret_offset, MemoryAddress ret_size_offset);
 
   private:
     ContextInterface& current_context() { return *context_stack.top(); }
+    void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
+    void pop_context(std::vector<FF>&& return_data);
 
     void dispatch_opcode(ExecutionOpCode opcode, const std::vector<MemoryAddress>& resolved_operands);
     template <typename... Ts>
