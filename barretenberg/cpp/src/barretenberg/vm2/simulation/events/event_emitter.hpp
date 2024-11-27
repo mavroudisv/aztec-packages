@@ -12,6 +12,7 @@ template <typename Event> class EventEmitterInterface {
 
     // TODO: DO NOT DO THIS. We shouldn't prescribe the base container.
     virtual const std::list<Event>& get_events() const = 0;
+    virtual std::list<Event> dump_events() = 0;
 };
 
 template <typename Event> class EventEmitter : public EventEmitterInterface<Event> {
@@ -25,6 +26,7 @@ template <typename Event> class EventEmitter : public EventEmitterInterface<Even
     };
 
     const std::list<Event>& get_events() const override { return events; }
+    std::list<Event> dump_events() override { return std::move(events); }
 
   private:
     // Using a list to have pointer stability.
@@ -43,6 +45,7 @@ template <typename Event> class DiscardingEventEmitter : public EventEmitterInte
         static std::list<Event> empty;
         return empty;
     }
+    std::list<Event> dump_events() override { return {}; }
 };
 
 } // namespace bb::avm::simulation

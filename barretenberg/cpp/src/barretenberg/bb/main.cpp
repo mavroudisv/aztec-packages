@@ -23,6 +23,7 @@
 #include "barretenberg/vm/avm/trace/execution.hpp"
 #include "barretenberg/vm/aztec_constants.hpp"
 #include "barretenberg/vm/stats.hpp"
+#include "barretenberg/vm2/avm_api.hpp"
 #endif
 #include "config.hpp"
 #include "get_bn254_crs.hpp"
@@ -981,6 +982,20 @@ void avm_prove(const std::filesystem::path& calldata_path,
 #endif
 }
 
+void avm2_prove(const std::filesystem::path& hints_path, const std::filesystem::path& output_path)
+{
+    using namespace avm;
+    // vinfo("initializing crs with size: ", avm_trace::Execution::SRS_SIZE);
+    // init_bn254_crs(avm_trace::Execution::SRS_SIZE);
+
+    // TODO: pass these.
+    (void)hints_path;
+    (void)output_path;
+
+    AvmAPI avm;
+    avm.prove();
+}
+
 /**
  * @brief Verifies an avm proof and writes the result to stdout
  *
@@ -1507,6 +1522,11 @@ int main(int argc, char* argv[])
             std::string output_path = get_option(args, "-o", "./target");
             write_recursion_inputs_honk<UltraFlavor>(bytecode_path, witness_path, output_path, recursive);
 #ifndef DISABLE_AZTEC_VM
+        } else if (command == "avm2_prove") {
+            std::filesystem::path hints_path = get_option(args, "--avm-hints", "./target/avm_hints.bin");
+            // This outputs both files: proof and vk, under the given directory.
+            std::filesystem::path output_path = get_option(args, "-o", "./proofs");
+            avm2_prove(hints_path, output_path);
         } else if (command == "avm_prove") {
             std::filesystem::path avm_calldata_path = get_option(args, "--avm-calldata", "./target/avm_calldata.bin");
             std::filesystem::path avm_public_inputs_path =

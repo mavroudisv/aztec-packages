@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ostream>
 #include <vector>
 
 #include "barretenberg/vm2/common/memory_types.hpp"
@@ -19,5 +20,19 @@ struct ExecutionEvent {
     // Needed for testing matchers.
     bool operator==(const ExecutionEvent& other) const = default;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const ExecutionEvent& s)
+{
+    os << "ExecutionEvent{pc=" << s.pc << ", opcode=" << s.opcode << ", indirect=" << s.indirect << ", operands=[";
+    for (const auto& operand : s.operands) {
+        os << operand << ", ";
+    }
+    os << "], resolved_operands=[";
+    for (const auto& resolved_operand : s.resolved_operands) {
+        os << resolved_operand << ", ";
+    }
+    os << "]}";
+    return os;
+}
 
 } // namespace bb::avm::simulation

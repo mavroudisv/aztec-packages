@@ -1,5 +1,8 @@
 #pragma once
 
+#include <ostream>
+#include <string>
+
 namespace bb::avm {
 
 /**
@@ -112,5 +115,20 @@ enum class ExecutionOpCode {
     JUMPI,
     RETURN,
 };
+
+inline std::ostream& operator<<(std::ostream& os, const ExecutionOpCode& op)
+{
+    switch (op) {
+    case ExecutionOpCode::ADD:
+        os << "ADD";
+    case ExecutionOpCode::CALL:
+        os << "CALL";
+    case ExecutionOpCode::JUMPI:
+        os << "JUMPI";
+    case ExecutionOpCode::RETURN:
+        os << "RETURN";
+    }
+    return os;
+}
 
 } // namespace bb::avm
