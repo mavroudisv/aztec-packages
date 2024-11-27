@@ -26,7 +26,9 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
     const auto [contract_address, _] = memory.get(addr);
 
     // TODO: should we do this in the main run() loop?
-    enter_context(context_provider.make(static_cast<int>((uint32_t)contract_address), /*call_id=*/0));
+    auto nested_context = context_provider.make(
+        std::move(contract_address), /*msg_sender=*/context.get_address(), /*calldata=*/{}, /*is_static=*/false);
+    enter_context(std::move(nested_context));
 }
 
 void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryAddress ret_size_offset)
@@ -38,10 +40,13 @@ void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryA
     auto [values, _] = memory.get_slice(ret_offset, size);
 
     context_stack.pop();
+    std::vector returndata(values.begin(), values.end());
     if (!context_stack.empty()) {
         auto& context = current_context();
         // TODO: We'll need more than just the return data. E.g., the space id, address and size.
-        context.set_nested_returndata(std::vector<FF>(values.begin(), values.end()));
+        context.set_nested_returndata(std::move(returndata));
+    } else {
+        top_level_returndata = std::move(returndata);
     }
 }
 
@@ -54,6 +59,16 @@ void Execution::jumpi(ContextInterface& context, uint32_t loc, MemoryAddress con
     if (resolved_cond.value != 0) {
         context.set_next_pc(loc);
     }
+}
+
+void Execution::execute(AztecAddress contract_address,
+                        std::span<const FF> calldata,
+                        AztecAddress msg_sender,
+                        bool is_static)
+{
+    auto context = context_provider.make(contract_address, msg_sender, calldata, is_static);
+    enter_context(std::move(context));
+    run();
 }
 
 void Execution::run()

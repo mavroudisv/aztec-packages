@@ -6,6 +6,7 @@
 #include <stdexcept>
 
 #include "barretenberg/vm2/simulation/events/alu_event.hpp"
+#include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 
 namespace bb::avm::tracegen {
 
@@ -24,7 +25,8 @@ Column get_operation_selector(simulation::AluOperation operation)
 
 } // namespace
 
-void AluTraceBuilder::process(const std::list<simulation::AluEvent>& events, TraceContainer& trace)
+void AluTraceBuilder::process(const simulation::EventEmitterInterface<simulation::AluEvent>::Container& events,
+                              TraceContainer& trace)
 {
     using C = Column;
 

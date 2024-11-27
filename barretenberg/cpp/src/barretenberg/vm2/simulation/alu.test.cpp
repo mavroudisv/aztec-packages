@@ -17,7 +17,7 @@ using ::testing::StrictMock;
 
 TEST(AvmSimulationAluTest, Add)
 {
-    DiscardingEventEmitter<MemoryEvent> emitter;
+    NoopEventEmitter<MemoryEvent> emitter;
     Memory mem(/*space_id=*/0, emitter);
     StrictMock<MockContext> context;
     EXPECT_CALL(context, get_memory()).WillRepeatedly(ReturnRef(mem));

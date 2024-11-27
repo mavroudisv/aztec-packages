@@ -2,8 +2,11 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <stack>
+#include <vector>
 
+#include "barretenberg/vm2/common/aztec_types.hpp"
 #include "barretenberg/vm2/common/field.hpp"
 #include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/simulation/addressing.hpp"
@@ -27,8 +30,10 @@ class Execution final {
         , events(event_emitter)
     {}
 
+    void execute(AztecAddress contract_address, std::span<const FF> calldata, AztecAddress msg_sender, bool is_static);
     void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
     void run();
+    std::span<const FF> get_top_level_returndata() const { return top_level_returndata; }
 
     void add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr);
     void jumpi(ContextInterface& context, uint32_t loc, MemoryAddress cond_addr);
@@ -44,6 +49,7 @@ class Execution final {
                             const std::vector<MemoryAddress>& resolved_operands);
 
     std::stack<std::unique_ptr<ContextInterface>> context_stack;
+    std::vector<FF> top_level_returndata;
 
     AluInterface& alu;
     AddressingBase& addressing;

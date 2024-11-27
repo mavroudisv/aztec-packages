@@ -2,7 +2,10 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
+#include <vector>
 
+#include "barretenberg/vm2/common/aztec_types.hpp"
 #include "barretenberg/vm2/common/field.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/events/memory_event.hpp"
@@ -13,18 +16,34 @@ namespace bb::avm::simulation {
 class ContextInterface {
   public:
     virtual ~ContextInterface() = default;
+
+    // Machine state.
     virtual MemoryInterface& get_memory() = 0;
     virtual uint32_t get_pc() const = 0;
     virtual void set_pc(uint32_t new_pc) = 0;
     virtual uint32_t get_next_pc() const = 0;
     virtual void set_next_pc(uint32_t new_next_pc) = 0;
     virtual void set_nested_returndata(std::vector<FF> return_data) = 0;
+
+    // Environment.
+    virtual const AztecAddress& get_address() const = 0;
+    virtual const AztecAddress& get_msg_sender() const = 0;
+    virtual std::span<const FF> get_calldata() const = 0;
+    virtual bool get_is_static() const = 0;
 };
 
 class Context : public ContextInterface {
   public:
-    Context(std::unique_ptr<MemoryInterface> memory)
-        : memory(std::move(memory))
+    Context(AztecAddress address,
+            AztecAddress msg_sender,
+            std::span<const FF> calldata,
+            bool is_static,
+            std::unique_ptr<MemoryInterface> memory)
+        : address(address)
+        , msg_sender(msg_sender)
+        , calldata(calldata.begin(), calldata.end())
+        , is_static(is_static)
+        , memory(std::move(memory))
     {}
 
     // Having getters and setters make it easier to mock the context.
@@ -36,7 +55,20 @@ class Context : public ContextInterface {
     void set_next_pc(uint32_t new_next_pc) override { next_pc = new_next_pc; }
     void set_nested_returndata(std::vector<FF> return_data) override { nested_returndata = std::move(return_data); }
 
+    // Environment.
+    const AztecAddress& get_address() const override { return address; }
+    const AztecAddress& get_msg_sender() const override { return msg_sender; }
+    std::span<const FF> get_calldata() const override { return calldata; }
+    bool get_is_static() const override { return is_static; }
+
   private:
+    // Environment.
+    AztecAddress address;
+    AztecAddress msg_sender;
+    std::vector<FF> calldata;
+    bool is_static;
+
+    // Machine state.
     uint32_t pc = 0;
     uint32_t next_pc = 0;
     std::vector<FF> nested_returndata;
@@ -46,7 +78,10 @@ class Context : public ContextInterface {
 class ContextProviderInterface {
   public:
     virtual ~ContextProviderInterface() = default;
-    virtual std::unique_ptr<ContextInterface> make(int contract_address, uint32_t call_id) const = 0;
+    virtual std::unique_ptr<ContextInterface> make(AztecAddress address,
+                                                   AztecAddress msg_sender,
+                                                   std::span<const FF> calldata,
+                                                   bool is_static) const = 0;
 };
 
 // This is the real thing. If you need a context made out of other objects, use a mock.
@@ -55,9 +90,14 @@ class ContextProvider : public ContextProviderInterface {
     ContextProvider(EventEmitterInterface<MemoryEvent>& memory_events)
         : memory_events(memory_events)
     {}
-    std::unique_ptr<ContextInterface> make([[maybe_unused]] int contract_address, uint32_t call_id) const override
+    std::unique_ptr<ContextInterface> make(AztecAddress address,
+                                           AztecAddress msg_sender,
+                                           std::span<const FF> calldata,
+                                           bool is_static) const override
     {
-        return std::make_unique<Context>(std::make_unique<Memory>(call_id, memory_events));
+        // FIXME: space id.
+        return std::make_unique<Context>(
+            address, msg_sender, calldata, is_static, std::make_unique<Memory>(0, memory_events));
     }
 
   private:
