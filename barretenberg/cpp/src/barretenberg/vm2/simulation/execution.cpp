@@ -23,11 +23,10 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
 
     // TODO: Maybe this should be done in a call gadget?
     // I can't do much more than resolve with the current event.
-    auto contract_address = memory.get(addr);
+    const auto [contract_address, _] = memory.get(addr);
 
     // TODO: should we do this in the main run() loop?
-    int address = static_cast<int>((uint32_t)contract_address.value);
-    enter_context(context_provider.make(address, /*call_id=*/0));
+    enter_context(context_provider.make(static_cast<int>((uint32_t)contract_address), /*call_id=*/0));
 }
 
 void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryAddress ret_size_offset)

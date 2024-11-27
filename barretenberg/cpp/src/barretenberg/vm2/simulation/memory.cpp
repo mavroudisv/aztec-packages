@@ -12,11 +12,11 @@ void Memory::set(MemoryAddress index, MemoryValue value, MemoryTag tag)
     events.emit({ .mode = MemoryMode::WRITE, .addr = index, .value = value, .tag = tag, .space_id = space_id });
 }
 
-ValueAndTag Memory::get(MemoryAddress index) const
+ValueRefAndTag Memory::get(MemoryAddress index) const
 {
-    auto vt = memory.at(index);
+    const auto& vt = memory.at(index);
     events.emit({ .mode = MemoryMode::READ, .addr = index, .value = vt.value, .tag = vt.tag, .space_id = space_id });
-    return vt;
+    return { vt.value, vt.tag };
 }
 
 std::pair<std::vector<MemoryValue>, std::vector<MemoryTag>> Memory::get_slice(MemoryAddress start, size_t size) const

@@ -50,13 +50,14 @@ TEST_F(AvmSimulationExecutionTest, Return)
     MemoryAddress ret_offset = 1;
     MemoryAddress ret_size_offset = 2;
     size_t ret_size = 7;
+    FF ret_size_ff = ret_size;
     std::vector<FF> returndata = { 1, 2, 3, 4, 5 };
 
     MockMemory child_memory;
     auto child_context_obj = std::make_unique<MockContext>();
     auto& child_context = *child_context_obj;
     EXPECT_CALL(child_context, get_memory).WillRepeatedly(ReturnRef(child_memory));
-    EXPECT_CALL(child_memory, get(ret_size_offset)).WillOnce(Return<ValueAndTag>({ ret_size, MemoryTag::U32 }));
+    EXPECT_CALL(child_memory, get(ret_size_offset)).WillOnce(Return<ValueRefAndTag>({ ret_size_ff, MemoryTag::U32 }));
     EXPECT_CALL(child_memory, get_slice(ret_offset, ret_size)).WillOnce(Return<SliceWithTags>({ returndata, {} }));
 
     // FIX: i'm not checking popping of context, etc. And it's not easy to do.

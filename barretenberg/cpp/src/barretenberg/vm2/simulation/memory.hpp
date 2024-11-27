@@ -9,8 +9,8 @@
 
 namespace bb::avm::simulation {
 
-struct ValueAndTag {
-    MemoryValue value;
+struct ValueRefAndTag {
+    const MemoryValue& value;
     MemoryTag tag;
 };
 
@@ -21,12 +21,12 @@ class MemoryInterface {
     virtual ~MemoryInterface() = default;
 
     virtual void set(MemoryAddress index, MemoryValue value, MemoryTag tag) = 0;
-    virtual ValueAndTag get(MemoryAddress index) const = 0;
+    virtual ValueRefAndTag get(MemoryAddress index) const = 0;
     virtual SliceWithTags get_slice(MemoryAddress start, size_t size) const = 0;
 
     virtual uint32_t get_space_id() const = 0;
 
-    static bool is_valid_address(ValueAndTag address)
+    static bool is_valid_address(ValueRefAndTag address)
     {
         // TODO: consider adding < 2^32 once we change memory value types.
         return address.tag == MemoryTag::U32;
@@ -41,12 +41,17 @@ class Memory : public MemoryInterface {
     {}
 
     void set(MemoryAddress index, MemoryValue value, MemoryTag tag) override;
-    ValueAndTag get(MemoryAddress index) const override;
+    ValueRefAndTag get(MemoryAddress index) const override;
     SliceWithTags get_slice(MemoryAddress start, size_t size) const override;
 
     uint32_t get_space_id() const override { return space_id; }
 
   private:
+    struct ValueAndTag {
+        MemoryValue value;
+        MemoryTag tag;
+    };
+
     uint32_t space_id;
     std::unordered_map<size_t, ValueAndTag> memory;
     EventEmitterInterface<MemoryEvent>& events;
