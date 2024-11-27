@@ -5,8 +5,10 @@
 
 namespace bb::avm::simulation {
 
-void Alu::add(MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
+void Alu::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
+    auto& memory = context.get_memory();
+
     // TODO: check types and tags and propagate.
     auto a = memory.get(a_addr);
     auto b = memory.get(b_addr);

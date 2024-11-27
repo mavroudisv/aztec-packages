@@ -17,8 +17,7 @@ namespace bb::avm::simulation {
 namespace {
 
 using ::testing::_;
-using ::testing::ElementsAre;
-using ::testing::Return;
+using ::testing::Ref;
 using ::testing::ReturnRef;
 
 TEST(AvmSimulationExecutionTest, Add)
@@ -26,19 +25,13 @@ TEST(AvmSimulationExecutionTest, Add)
     MockAlu alu;
     MockAddressing addressing;
     MockContextProvider context_provider;
+    MockContext context;
 
-    MockMemory memory;
-    auto context = std::make_unique<MockContext>();
-    EXPECT_CALL(*context, get_memory()).WillRepeatedly(ReturnRef(memory));
-    // FIXME: it doesn't make sense to have to test/provide pc here.
-    EXPECT_CALL(*context, get_pc()).WillRepeatedly(Return(0));
-
-    EXPECT_CALL(alu, add(4, 5, 6));
+    EXPECT_CALL(alu, add(Ref(context), 4, 5, 6));
 
     EventEmitter<ExecutionEvent> execution_event_emitter;
     Execution execution(alu, addressing, context_provider, execution_event_emitter);
-    execution.enter_context(std::move(context));
-    execution.add(4, 5, 6);
+    execution.add(context, 4, 5, 6);
 }
 
 } // namespace

@@ -1,24 +1,25 @@
 #include "barretenberg/vm2/simulation/execution.hpp"
-#include "barretenberg/vm2/common/memory_types.hpp"
-#include "barretenberg/vm2/common/opcodes.hpp"
-#include "barretenberg/vm2/simulation/addressing.hpp"
-#include "barretenberg/vm2/simulation/events/execution_event.hpp"
 
-#include <bits/utility.h>
 #include <cstdint>
 #include <functional>
 
+#include "barretenberg/vm2/common/memory_types.hpp"
+#include "barretenberg/vm2/common/opcodes.hpp"
+#include "barretenberg/vm2/simulation/addressing.hpp"
+#include "barretenberg/vm2/simulation/context.hpp"
+#include "barretenberg/vm2/simulation/events/execution_event.hpp"
+
 namespace bb::avm::simulation {
 
-void Execution::add(MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
+void Execution::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
     // TODO: track interaction.
-    alu.add(a_addr, b_addr, dst_addr);
+    alu.add(context, a_addr, b_addr, dst_addr);
 }
 
-void Execution::call(MemoryAddress addr)
+void Execution::call(ContextInterface& context, MemoryAddress addr)
 {
-    auto& memory = current_context().get_memory();
+    auto& memory = context.get_memory();
 
     // TODO: Maybe this should be done in a call gadget?
     // I can't do much more than resolve with the current event.
@@ -26,9 +27,9 @@ void Execution::call(MemoryAddress addr)
     enter_context(context_provider.make(contract_address.value, /*call_id=*/0));
 }
 
-void Execution::jumpi(uint32_t loc, MemoryAddress cond_addr)
+void Execution::jumpi(ContextInterface& context, uint32_t loc, MemoryAddress cond_addr)
 {
-    auto& memory = current_context().get_memory();
+    auto& memory = context.get_memory();
 
     // TODO: in gadget.
     auto resolved_cond = memory.get(cond_addr);
@@ -90,14 +91,14 @@ void Execution::dispatch_opcode(ExecutionOpCode opcode, const std::vector<Memory
 // Some template magic to dispatch the opcode by deducing the number of arguments and types,
 // and making the appropriate checks and casts.
 template <typename... Ts>
-inline void Execution::call_with_operands(void (Execution::*f)(Ts...),
+inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&, Ts...),
                                           const std::vector<MemoryAddress>& resolved_operands)
 {
     assert(resolved_operands.size() == sizeof...(Ts));
     auto operand_indices = std::make_index_sequence<sizeof...(Ts)>{};
     using types = std::tuple<Ts...>;
-    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
-        (this->*f)(static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
+    [f, this, &resolved_operands]<std::size_t... Is>(std::index_sequence<Is...>) {
+        (this->*f)(current_context(), static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
     }(operand_indices);
 }
 
