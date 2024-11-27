@@ -1,9 +1,9 @@
-#include "gmock/gmock.h"
+#include "barretenberg/vm2/simulation/alu.hpp"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "barretenberg/vm2/common/memory_types.hpp"
-#include "barretenberg/vm2/simulation/alu.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/events/memory_event.hpp"
 #include "barretenberg/vm2/simulation/memory.hpp"

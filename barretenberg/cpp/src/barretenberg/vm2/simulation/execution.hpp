@@ -27,6 +27,7 @@ class Execution final {
         , events(event_emitter)
     {}
 
+    void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
     void run();
 
     void add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr);
@@ -36,8 +37,6 @@ class Execution final {
 
   private:
     ContextInterface& current_context() { return *context_stack.top(); }
-    void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
-    void pop_context(std::vector<FF>&& return_data);
 
     void dispatch_opcode(ExecutionOpCode opcode, const std::vector<MemoryAddress>& resolved_operands);
     template <typename... Ts>

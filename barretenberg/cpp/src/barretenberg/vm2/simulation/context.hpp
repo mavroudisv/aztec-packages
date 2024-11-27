@@ -18,7 +18,7 @@ class ContextInterface {
     virtual void set_pc(uint32_t new_pc) = 0;
     virtual uint32_t get_next_pc() const = 0;
     virtual void set_next_pc(uint32_t new_next_pc) = 0;
-    virtual void set_nested_returndata(std::vector<FF>&& return_data) = 0;
+    virtual void set_nested_returndata(std::vector<FF> return_data) = 0;
 };
 
 class Context : public ContextInterface {
@@ -34,7 +34,7 @@ class Context : public ContextInterface {
     void set_pc(uint32_t new_pc) override { pc = new_pc; }
     uint32_t get_next_pc() const override { return next_pc; }
     void set_next_pc(uint32_t new_next_pc) override { next_pc = new_next_pc; }
-    void set_nested_returndata(std::vector<FF>&& return_data) override { nested_returndata = std::move(return_data); }
+    void set_nested_returndata(std::vector<FF> return_data) override { nested_returndata = std::move(return_data); }
 
   private:
     uint32_t pc = 0;

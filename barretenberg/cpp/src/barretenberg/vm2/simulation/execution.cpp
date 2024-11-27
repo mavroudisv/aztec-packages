@@ -26,7 +26,8 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
     auto contract_address = memory.get(addr);
 
     // TODO: should we do this in the main run() loop?
-    enter_context(context_provider.make(contract_address.value, /*call_id=*/0));
+    int address = static_cast<int>((uint32_t)contract_address.value);
+    enter_context(context_provider.make(address, /*call_id=*/0));
 }
 
 void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryAddress ret_size_offset)

@@ -2,10 +2,12 @@
 
 #include <cstdint>
 
+#include "barretenberg/vm2/common/field.hpp"
+
 namespace bb::avm {
 
 using MemoryAddress = std::size_t;
-using MemoryValue = int;
+using MemoryValue = simulation::FF;
 
 enum class MemoryTag {
     U1,
