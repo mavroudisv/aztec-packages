@@ -15,7 +15,10 @@ namespace bb::avm::simulation {
 
 class MockAddressing : public AddressingBase {
   public:
-    MockAddressing() = default;
+    // https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster
+    MockAddressing();
+    ~MockAddressing() override;
+
     MOCK_METHOD(std::vector<MemoryAddress>,
                 resolve,
                 (uint16_t indirect,

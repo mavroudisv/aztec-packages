@@ -10,6 +10,10 @@ namespace bb::avm::simulation {
 
 class MockMemory : public MemoryInterface {
   public:
+    // https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster
+    MockMemory();
+    ~MockMemory() override;
+
     MOCK_METHOD(void, set, (MemoryAddress index, MemoryValue value, MemoryTag tag), (override));
     MOCK_METHOD(ValueAndTag, get, (MemoryAddress index), (const, override));
     MOCK_METHOD((std::pair<std::vector<MemoryValue>, std::vector<MemoryTag>>),

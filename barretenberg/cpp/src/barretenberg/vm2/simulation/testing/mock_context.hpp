@@ -12,6 +12,10 @@ namespace bb::avm::simulation {
 
 class MockContext : public ContextInterface {
   public:
+    // https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster
+    MockContext();
+    ~MockContext() override;
+
     MOCK_METHOD(MemoryInterface&, get_memory, (), (override));
     MOCK_METHOD(uint32_t, get_pc, (), (const, override));
     MOCK_METHOD(void, set_pc, (uint32_t new_pc), (override));

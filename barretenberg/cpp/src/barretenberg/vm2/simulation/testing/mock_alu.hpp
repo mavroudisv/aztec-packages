@@ -10,6 +10,10 @@ namespace bb::avm::simulation {
 
 class MockAlu : public AluInterface {
   public:
+    // https://google.github.io/googletest/gmock_cook_book.html#making-the-compilation-faster
+    MockAlu();
+    ~MockAlu() override;
+
     MOCK_METHOD(void,
                 add,
                 (ContextInterface&, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr),
