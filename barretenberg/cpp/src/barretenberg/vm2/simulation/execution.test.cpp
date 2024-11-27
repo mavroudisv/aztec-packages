@@ -18,14 +18,14 @@ namespace {
 
 using ::testing::_;
 using ::testing::Ref;
-using ::testing::ReturnRef;
+using ::testing::StrictMock;
 
 TEST(AvmSimulationExecutionTest, Add)
 {
-    MockAlu alu;
-    MockAddressing addressing;
-    MockContextProvider context_provider;
-    MockContext context;
+    StrictMock<MockAlu> alu;
+    StrictMock<MockAddressing> addressing;
+    StrictMock<MockContextProvider> context_provider;
+    StrictMock<MockContext> context;
 
     EXPECT_CALL(alu, add(Ref(context), 4, 5, 6));
 

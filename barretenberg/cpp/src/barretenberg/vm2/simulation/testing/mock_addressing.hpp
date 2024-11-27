@@ -13,7 +13,7 @@
 
 namespace bb::avm::simulation {
 
-class MockAddressing final : public AddressingBase {
+class MockAddressing : public AddressingBase {
   public:
     MockAddressing() = default;
     MOCK_METHOD(std::vector<MemoryAddress>,

@@ -24,6 +24,8 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
     // TODO: Maybe this should be done in a call gadget?
     // I can't do much more than resolve with the current event.
     auto contract_address = memory.get(addr);
+
+    // TODO: should we do this in the main run() loop?
     enter_context(context_provider.make(contract_address.value, /*call_id=*/0));
 }
 
@@ -34,7 +36,7 @@ void Execution::jumpi(ContextInterface& context, uint32_t loc, MemoryAddress con
     // TODO: in gadget.
     auto resolved_cond = memory.get(cond_addr);
     if (resolved_cond.value != 0) {
-        current_context().set_next_pc(loc);
+        context.set_next_pc(loc);
     }
 }
 

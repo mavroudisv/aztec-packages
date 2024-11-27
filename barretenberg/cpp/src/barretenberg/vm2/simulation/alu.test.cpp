@@ -2,6 +2,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/simulation/alu.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/events/memory_event.hpp"
@@ -12,21 +13,22 @@ namespace bb::avm::simulation {
 namespace {
 
 using ::testing::ReturnRef;
+using ::testing::StrictMock;
 
 TEST(AvmSimulationAluTest, Add)
 {
     DiscardingEventEmitter<MemoryEvent> emitter;
     Memory mem(/*space_id=*/0, emitter);
-    MockContext context;
+    StrictMock<MockContext> context;
     EXPECT_CALL(context, get_memory()).WillRepeatedly(ReturnRef(mem));
 
     EventEmitter<AluEvent> alu_event_emitter;
     Alu alu(alu_event_emitter);
 
     // TODO: actually can choose to mock, not even use a memory, check the events, etc.
-    uint32_t a_addr = 0;
-    uint32_t b_addr = 1;
-    uint32_t dst_addr = 2;
+    MemoryAddress a_addr = 0;
+    MemoryAddress b_addr = 1;
+    MemoryAddress dst_addr = 2;
 
     mem.set(a_addr, 1, MemoryTag::U32);
     mem.set(b_addr, 2, MemoryTag::U32);
