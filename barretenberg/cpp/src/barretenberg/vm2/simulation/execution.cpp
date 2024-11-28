@@ -1,5 +1,6 @@
 #include "barretenberg/vm2/simulation/execution.hpp"
 
+#include <concepts>
 #include <cstdint>
 #include <functional>
 
@@ -91,6 +92,7 @@ void Execution::run()
         auto [instruction, read_bytes] = context.get_bytecode_manager().read_instruction(pc);
         auto [opcode, resolved_operands] = resolve_instruction(instruction);
         context.set_next_pc(pc + read_bytes);
+
         dispatch_opcode(opcode, resolved_operands);
 
         events.emit({
@@ -139,20 +141,35 @@ inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&
     }(operand_indices);
 }
 
+template <typename... Ts>
+constexpr size_t num_addresses_in_function([[maybe_unused]] void (Execution::*f)(ContextInterface&, Ts...))
+{
+    return ((std::is_same_v<Ts, MemoryAddress> ? 1 : 0) + ...);
+}
+
 std::pair<ExecutionOpCode, std::vector<Operand>> Execution::resolve_instruction(const Instruction& instruction)
 {
     ExecutionOpCode opcode = static_cast<ExecutionOpCode>(-1);
+    int64_t num_addresses_to_resolve = 0;
 
     switch (instruction.opcode) {
     case WireOpCode::ADD_8:
     case WireOpCode::ADD_16:
         opcode = ExecutionOpCode::ADD;
+        num_addresses_to_resolve = num_addresses_in_function(&Execution::add);
+        break;
     case WireOpCode::CALL:
         opcode = ExecutionOpCode::CALL;
+        num_addresses_to_resolve = num_addresses_in_function(&Execution::call);
+        break;
     case WireOpCode::RETURN:
         opcode = ExecutionOpCode::RETURN;
+        num_addresses_to_resolve = num_addresses_in_function(&Execution::ret);
+        break;
     case WireOpCode::JUMPI_32:
         opcode = ExecutionOpCode::JUMPI;
+        num_addresses_to_resolve = num_addresses_in_function(&Execution::jumpi);
+        break;
     default:
         (void)0;
         // throw std::runtime_error("Execution cannot handle opcode.");
@@ -160,14 +177,17 @@ std::pair<ExecutionOpCode, std::vector<Operand>> Execution::resolve_instruction(
 
     // By this point we assume that the opcode is one of the valid execution opcodes.
     // TODO: catch failure.
-    // uint8_t indirect = 0;
-    // size_t num_addresses_to_resolve = 1;
-    // auto resolved_operands =
-    //     addressing.resolve(indirect, /*operands=*/{}, num_addresses_to_resolve, current_context().get_memory());
-    (void)addressing;
+    auto resolved_addresses =
+        addressing.resolve(instruction.indirect,
+                           std::vector<MemoryAddress>(instruction.operands.begin(),
+                                                      instruction.operands.begin() + num_addresses_to_resolve),
+                           current_context().get_memory());
+    auto resolved_operands = instruction.operands;
+    for (size_t i = 0; i < static_cast<size_t>(num_addresses_to_resolve); i++) {
+        resolved_operands[i] = Operand(resolved_addresses[i]);
+    }
 
-    // return { opcode, std::move(resolved_operands) };
-    return { opcode, instruction.operands };
+    return { opcode, std::move(resolved_operands) };
 }
 
 } // namespace bb::avm::simulation

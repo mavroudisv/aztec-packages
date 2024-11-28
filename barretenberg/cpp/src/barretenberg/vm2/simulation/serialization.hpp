@@ -17,6 +17,14 @@ class Operand {
         : value(std::move(value))
     {}
 
+    // Helpers for when we want to pass a value without casting.
+    static Operand u8(uint8_t value) { return { value }; }
+    static Operand u16(uint16_t value) { return { value }; }
+    static Operand u32(uint32_t value) { return { value }; }
+    static Operand u64(uint64_t value) { return { value }; }
+    static Operand u128(uint128_t value) { return { std::move(value) }; }
+    static Operand ff(FF value) { return { std::move(value) }; }
+
     // We define conversion to supported types.
     // The conversion will throw if the type would truncate.
     explicit operator bool() const;
@@ -33,11 +41,13 @@ class Operand {
 
 struct Instruction {
     WireOpCode opcode;
+    uint16_t indirect;
     std::vector<Operand> operands;
 
     Instruction() = delete;
-    Instruction(WireOpCode opcode, std::vector<Operand> operands)
+    Instruction(WireOpCode opcode, uint16_t indirect, std::vector<Operand> operands)
         : opcode(opcode)
+        , indirect(indirect)
         , operands(std::move(operands)){};
 };
 

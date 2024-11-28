@@ -54,6 +54,7 @@ class Execution : public ExecutionInterface {
                             bool is_static) override;
 
     void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
+    void run();
 
     // Opcode handlers. The order of the operands matters and should be the same as the wire format.
     void add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr);
@@ -63,7 +64,6 @@ class Execution : public ExecutionInterface {
 
   private:
     ContextInterface& current_context() { return *context_stack.top(); }
-    void run();
 
     void dispatch_opcode(ExecutionOpCode opcode, const std::vector<Operand>& resolved_operands);
     template <typename... Ts>

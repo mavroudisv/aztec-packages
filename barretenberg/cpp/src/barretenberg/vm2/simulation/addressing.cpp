@@ -11,15 +11,12 @@
 
 namespace bb::avm::simulation {
 
-// Will resolve `num_addresses_to_resolve` addresses from `offsets` using the memory interface.
-// This assumes that the addresses are always the first operands.
+// Will resolve all addresses from `offsets` using the memory interface.
 std::vector<MemoryAddress> Addressing::resolve(uint16_t indirect,
-                                               const std::vector<MemoryAddress>& offsets,
-                                               size_t num_addresses_to_resolve,
+                                               std::span<const MemoryAddress> offsets,
                                                MemoryInterface& memory) const
 {
     const size_t num_operands = offsets.size();
-    assert(num_operands <= num_addresses_to_resolve);
     // Copy the original offsets since they are our starting point.
     std::vector<MemoryAddress> resolved(offsets.begin(), offsets.end());
 
@@ -28,14 +25,14 @@ std::vector<MemoryAddress> Addressing::resolve(uint16_t indirect,
     // TODO: propagate this error.
     assert(memory.is_valid_address(stack_pointer));
 
-    for (size_t i = 0; i < num_addresses_to_resolve; ++i) {
+    for (size_t i = 0; i < num_operands; ++i) {
         // Relative?
         if ((resolved[i] >> i) & 1) {
             // TODO: check bounds and tags. See simulator for reference.
             resolved[i] += static_cast<MemoryAddress>(stack_pointer.value);
         }
         // Indirect?
-        if ((resolved[i] >> (i + num_addresses_to_resolve)) & 1) {
+        if ((resolved[i] >> (i + num_operands)) & 1) {
             // TODO: check bounds and tags. See simulator for reference.
             auto new_address = memory.get(resolved[i]);
             assert(memory.is_valid_address(new_address));
@@ -43,9 +40,8 @@ std::vector<MemoryAddress> Addressing::resolve(uint16_t indirect,
         }
     }
 
-    events.emit({ .num_addresses_to_resolve = num_addresses_to_resolve,
-                  .indirect = indirect,
-                  .operands = offsets,
+    events.emit({ .indirect = indirect,
+                  .operands = std::vector(offsets.begin(), offsets.end()),
                   .resolved_operands = resolved });
     return resolved;
 }

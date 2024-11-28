@@ -8,7 +8,6 @@
 namespace bb::avm::simulation {
 
 struct AddressingEvent {
-    size_t num_addresses_to_resolve;
     uint16_t indirect;
     // FIXME: this should also accomodate immediates, etc.
     std::vector<MemoryAddress> operands;

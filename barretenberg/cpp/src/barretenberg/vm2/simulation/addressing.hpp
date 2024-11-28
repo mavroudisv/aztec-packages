@@ -3,7 +3,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <vector>
+#include <span>
 
 #include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/simulation/events/addressing_event.hpp"
@@ -17,8 +17,7 @@ class AddressingBase {
     virtual ~AddressingBase() = default;
     // We need this method to be non-templated so that we can mock it.
     virtual std::vector<MemoryAddress> resolve(uint16_t indirect,
-                                               const std::vector<MemoryAddress>& offsets,
-                                               size_t num_addresses_to_resolve,
+                                               std::span<const MemoryAddress> offsets,
                                                MemoryInterface& memory) const = 0;
 
     // Convenience function that returns an array so that it can be destructured.
@@ -42,8 +41,7 @@ class Addressing final : public AddressingBase {
     {}
 
     std::vector<MemoryAddress> resolve(uint16_t indirect,
-                                       const std::vector<MemoryAddress>& offsets,
-                                       size_t num_addresses_to_resolve,
+                                       std::span<const MemoryAddress> offsets,
                                        MemoryInterface& memory) const override;
 
   private:

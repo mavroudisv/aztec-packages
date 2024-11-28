@@ -315,6 +315,7 @@ std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<con
     // }
     const auto& inst_format = iter->second;
 
+    uint16_t indirect = 0;
     std::vector<Operand> operands;
     for (const OperandType op_type : inst_format) {
         // No underflow as above condition guarantees pos <= length (after pos++)
@@ -343,11 +344,21 @@ std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<con
             operands.emplace_back(tag_u8);
             break;
         }
-        case OperandType::INDIRECT8:
-        case OperandType::UINT8:
+        case OperandType::INDIRECT8: {
+            indirect = bytecode[pos];
+            break;
+        }
+        case OperandType::UINT8: {
             operands.emplace_back(bytecode[pos]);
             break;
-        case OperandType::INDIRECT16:
+        }
+        case OperandType::INDIRECT16: {
+            uint16_t operand_u16 = 0;
+            uint8_t const* pos_ptr = &bytecode[pos];
+            serialize::read(pos_ptr, operand_u16);
+            indirect = operand_u16;
+            break;
+        }
         case OperandType::UINT16: {
             uint16_t operand_u16 = 0;
             uint8_t const* pos_ptr = &bytecode[pos];
@@ -386,7 +397,7 @@ std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<con
         pos += operand_size;
     }
 
-    return { { opcode, std::move(operands) }, static_cast<uint32_t>(pos - starting_pos) };
+    return { { opcode, indirect, std::move(operands) }, static_cast<uint32_t>(pos - starting_pos) };
 };
 
 } // namespace bb::avm::simulation

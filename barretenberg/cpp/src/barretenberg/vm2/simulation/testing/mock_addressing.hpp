@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstddef>
 #include <gmock/gmock.h>
 
-#include <array>
+#include <cstddef>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include "barretenberg/vm2/common/memory_types.hpp"
@@ -21,10 +21,7 @@ class MockAddressing : public AddressingBase {
 
     MOCK_METHOD(std::vector<MemoryAddress>,
                 resolve,
-                (uint16_t indirect,
-                 const std::vector<MemoryAddress>& offsets,
-                 size_t num_addreses_to_resolve,
-                 MemoryInterface& memory),
+                (uint16_t indirect, std::span<const MemoryAddress> offsets, MemoryInterface& memory),
                 (const override));
 };
 
