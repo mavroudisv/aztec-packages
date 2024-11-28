@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <span>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "barretenberg/common/serialize.hpp"
+#include "barretenberg/numeric/uint256/uint256.hpp"
 #include "barretenberg/vm2/common/opcodes.hpp"
 
 namespace bb::avm::simulation {
@@ -188,6 +190,93 @@ const std::unordered_map<WireOpCode, std::vector<OperandType>> WireOpCode_WIRE_F
 
 } // namespace
 
+Operand::operator bool() const
+{
+    return static_cast<bool>(this->operator uint8_t());
+}
+
+Operand::operator uint8_t() const
+{
+    if (std::holds_alternative<uint8_t>(value)) {
+        return std::get<uint8_t>(value);
+    }
+
+    throw std::runtime_error("Operand does not fit in uint8_t");
+}
+
+Operand::operator uint16_t() const
+{
+    if (std::holds_alternative<uint8_t>(value)) {
+        return std::get<uint8_t>(value);
+    } else if (std::holds_alternative<uint16_t>(value)) {
+        return std::get<uint16_t>(value);
+    }
+
+    throw std::runtime_error("Operand does not fit in uint16_t");
+}
+
+Operand::operator uint32_t() const
+{
+    if (std::holds_alternative<uint8_t>(value)) {
+        return std::get<uint8_t>(value);
+    } else if (std::holds_alternative<uint16_t>(value)) {
+        return std::get<uint16_t>(value);
+    } else if (std::holds_alternative<uint32_t>(value)) {
+        return std::get<uint32_t>(value);
+    }
+
+    throw std::runtime_error("Operand does not fit in uint32_t");
+}
+
+Operand::operator uint64_t() const
+{
+    if (std::holds_alternative<uint8_t>(value)) {
+        return std::get<uint8_t>(value);
+    } else if (std::holds_alternative<uint16_t>(value)) {
+        return std::get<uint16_t>(value);
+    } else if (std::holds_alternative<uint32_t>(value)) {
+        return std::get<uint32_t>(value);
+    } else if (std::holds_alternative<uint64_t>(value)) {
+        return std::get<uint64_t>(value);
+    }
+
+    throw std::runtime_error("Operand does not fit in uint64_t");
+}
+
+Operand::operator uint128_t() const
+{
+    if (std::holds_alternative<uint8_t>(value)) {
+        return std::get<uint8_t>(value);
+    } else if (std::holds_alternative<uint16_t>(value)) {
+        return std::get<uint16_t>(value);
+    } else if (std::holds_alternative<uint32_t>(value)) {
+        return std::get<uint32_t>(value);
+    } else if (std::holds_alternative<uint64_t>(value)) {
+        return std::get<uint64_t>(value);
+    } else if (std::holds_alternative<uint128_t>(value)) {
+        return std::get<uint128_t>(value);
+    }
+
+    throw std::runtime_error("Operand does not fit in uint128_t");
+}
+
+Operand::operator FF() const
+{
+    if (std::holds_alternative<uint8_t>(value)) {
+        return std::get<uint8_t>(value);
+    } else if (std::holds_alternative<uint16_t>(value)) {
+        return std::get<uint16_t>(value);
+    } else if (std::holds_alternative<uint32_t>(value)) {
+        return std::get<uint32_t>(value);
+    } else if (std::holds_alternative<uint64_t>(value)) {
+        return std::get<uint64_t>(value);
+    } else if (std::holds_alternative<uint128_t>(value)) {
+        return uint256_t::from_uint128(std::get<uint128_t>(value));
+    } else {
+        return std::get<FF>(value);
+    }
+}
+
 std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
 {
     const auto bytecode_length = bytecode.size();
@@ -226,7 +315,7 @@ std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<con
     // }
     const auto& inst_format = iter->second;
 
-    std::vector<Instruction::Operand> operands;
+    std::vector<Operand> operands;
     for (const OperandType op_type : inst_format) {
         // No underflow as above condition guarantees pos <= length (after pos++)
         const auto operand_size = OPERAND_TYPE_SIZE_BYTES.at(op_type);
@@ -251,7 +340,7 @@ std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<con
             //         .error = AvmError::INVALID_TAG_VALUE,
             //     };
             // }
-            operands.emplace_back(static_cast<MemoryTag>(tag_u8));
+            operands.emplace_back(tag_u8);
             break;
         }
         case OperandType::INDIRECT8:

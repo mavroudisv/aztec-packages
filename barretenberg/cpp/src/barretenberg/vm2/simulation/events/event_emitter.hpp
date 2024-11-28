@@ -9,11 +9,8 @@ template <typename Event> class EventEmitterInterface {
     // TODO: DO NOT DO THIS. We shouldn't prescribe the base container.
     using Container = std::list<Event>;
 
-    // EventEmitterInterface() = 0;
-    // virtual ~EventEmitterInterface() = default;
+    virtual ~EventEmitterInterface() = default;
     virtual Event& emit(Event&& event) = 0;
-
-    virtual const Container& get_events() const = 0;
     virtual Container dump_events() = 0;
 };
 
@@ -29,7 +26,7 @@ template <typename Event> class EventEmitter : public EventEmitterInterface<Even
         return events.back();
     };
 
-    const Container& get_events() const override { return events; }
+    const Container& get_events() const { return events; }
     Container dump_events() override { return std::move(events); }
 
   private:
@@ -47,11 +44,6 @@ template <typename Event> class NoopEventEmitter : public EventEmitterInterface<
     virtual ~NoopEventEmitter() = default;
 
     Event& emit(Event&& event) override { return event; };
-    const Container& get_events() const override
-    {
-        static Container empty;
-        return empty;
-    }
     Container dump_events() override { return {}; }
 };
 

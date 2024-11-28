@@ -8,29 +8,9 @@
 #include "barretenberg/vm2/simulation/addressing.hpp"
 #include "barretenberg/vm2/simulation/context.hpp"
 #include "barretenberg/vm2/simulation/events/execution_event.hpp"
+#include "barretenberg/vm2/simulation/serialization.hpp"
 
 namespace bb::avm::simulation {
-namespace {
-
-ExecutionOpCode wire_to_execution_opcode(WireOpCode opcode)
-{
-    switch (opcode) {
-    case WireOpCode::ADD_8:
-    case WireOpCode::ADD_16:
-        return ExecutionOpCode::ADD;
-    case WireOpCode::CALL:
-        return ExecutionOpCode::CALL;
-    case WireOpCode::RETURN:
-        return ExecutionOpCode::RETURN;
-    case WireOpCode::JUMPI_32:
-        return ExecutionOpCode::JUMPI;
-    default:
-        // throw std::runtime_error("Execution cannot handle opcode.");
-        return static_cast<ExecutionOpCode>(-1);
-    }
-}
-
-} // namespace
 
 void Execution::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
@@ -72,7 +52,10 @@ void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryA
         // TODO: We'll need more than just the return data. E.g., the space id, address and size.
         context.set_nested_returndata(std::move(returndata));
     } else {
-        top_level_returndata = std::move(returndata);
+        top_level_result = {
+            .returndata = std::move(returndata),
+            .success = true,
+        };
     }
 }
 
@@ -87,50 +70,41 @@ void Execution::jumpi(ContextInterface& context, uint32_t loc, MemoryAddress con
     }
 }
 
-void Execution::execute(AztecAddress contract_address,
-                        std::span<const FF> calldata,
-                        AztecAddress msg_sender,
-                        bool is_static)
+ExecutionResult Execution::execute(AztecAddress contract_address,
+                                   std::span<const FF> calldata,
+                                   AztecAddress msg_sender,
+                                   bool is_static)
 {
     const std::vector<uint8_t> bytecode = {}; // TODO: get bytecode from somewhere.
     auto context = context_provider.make(contract_address, msg_sender, calldata, is_static, bytecode);
     enter_context(std::move(context));
     run();
+    return std::move(top_level_result);
 }
 
 void Execution::run()
 {
-    // TODO: This would only execute one enqueued call.
     while (!context_stack.empty()) {
         auto& context = current_context();
-        auto& memory = current_context().get_memory();
 
         auto pc = context.get_pc();
         auto [instruction, read_bytes] = context.get_bytecode_manager().read_instruction(pc);
+        auto [opcode, resolved_operands] = resolve_instruction(instruction);
         context.set_next_pc(pc + read_bytes);
-
-        // Massage instruction.
-        auto opcode = wire_to_execution_opcode(instruction.opcode);
-
-        // By this point we assume that the opcode is one of the valid execution opcodes.
-        // TODO: catch failure.
-        uint8_t indirect = 0;
-        size_t num_addresses_to_resolve = 1;
-        auto resolved_operands = addressing.resolve(indirect, /*operands=*/{}, num_addresses_to_resolve, memory);
-        // TODO: consider passing context.
         dispatch_opcode(opcode, resolved_operands);
 
-        events.emit({ .pc = pc,
-                      .opcode = opcode,
-                      .indirect = indirect,
-                      .operands = {}, // operands,
-                      .resolved_operands = resolved_operands });
+        events.emit({
+            .pc = pc,
+            .opcode = opcode,
+            .operands = {},         // operands,
+            .resolved_operands = {} // resolved_operands
+        });
 
         context.set_pc(context.get_next_pc());
     }
 }
 
-void Execution::dispatch_opcode(ExecutionOpCode opcode, const std::vector<MemoryAddress>& resolved_operands)
+void Execution::dispatch_opcode(ExecutionOpCode opcode, const std::vector<Operand>& resolved_operands)
 {
     switch (opcode) {
     case ExecutionOpCode::ADD:
@@ -155,7 +129,7 @@ void Execution::dispatch_opcode(ExecutionOpCode opcode, const std::vector<Memory
 // and making the appropriate checks and casts.
 template <typename... Ts>
 inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&, Ts...),
-                                          const std::vector<MemoryAddress>& resolved_operands)
+                                          const std::vector<Operand>& resolved_operands)
 {
     assert(resolved_operands.size() == sizeof...(Ts));
     auto operand_indices = std::make_index_sequence<sizeof...(Ts)>{};
@@ -163,6 +137,37 @@ inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&
     [f, this, &resolved_operands]<std::size_t... Is>(std::index_sequence<Is...>) {
         (this->*f)(current_context(), static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
     }(operand_indices);
+}
+
+std::pair<ExecutionOpCode, std::vector<Operand>> Execution::resolve_instruction(const Instruction& instruction)
+{
+    ExecutionOpCode opcode = static_cast<ExecutionOpCode>(-1);
+
+    switch (instruction.opcode) {
+    case WireOpCode::ADD_8:
+    case WireOpCode::ADD_16:
+        opcode = ExecutionOpCode::ADD;
+    case WireOpCode::CALL:
+        opcode = ExecutionOpCode::CALL;
+    case WireOpCode::RETURN:
+        opcode = ExecutionOpCode::RETURN;
+    case WireOpCode::JUMPI_32:
+        opcode = ExecutionOpCode::JUMPI;
+    default:
+        (void)0;
+        // throw std::runtime_error("Execution cannot handle opcode.");
+    }
+
+    // By this point we assume that the opcode is one of the valid execution opcodes.
+    // TODO: catch failure.
+    // uint8_t indirect = 0;
+    // size_t num_addresses_to_resolve = 1;
+    // auto resolved_operands =
+    //     addressing.resolve(indirect, /*operands=*/{}, num_addresses_to_resolve, current_context().get_memory());
+    (void)addressing;
+
+    // return { opcode, std::move(resolved_operands) };
+    return { opcode, instruction.operands };
 }
 
 } // namespace bb::avm::simulation

@@ -11,8 +11,27 @@
 
 namespace bb::avm::simulation {
 
+class Operand {
+  public:
+    Operand(std::variant<uint8_t, uint16_t, uint32_t, uint64_t, uint128_t, FF> value)
+        : value(std::move(value))
+    {}
+
+    // We define conversion to supported types.
+    // The conversion will throw if the type would truncate.
+    explicit operator bool() const;
+    explicit operator uint8_t() const;
+    explicit operator uint16_t() const;
+    explicit operator uint32_t() const;
+    explicit operator uint64_t() const;
+    explicit operator uint128_t() const;
+    explicit operator FF() const;
+
+  private:
+    std::variant<uint8_t, uint16_t, uint32_t, uint64_t, uint128_t, FF> value;
+};
+
 struct Instruction {
-    using Operand = std::variant<MemoryTag, uint8_t, uint16_t, uint32_t, uint64_t, uint128_t, FF>;
     WireOpCode opcode;
     std::vector<Operand> operands;
 

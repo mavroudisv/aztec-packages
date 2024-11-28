@@ -12,7 +12,6 @@ namespace bb::avm::simulation {
 struct ExecutionEvent {
     uint32_t pc;
     ExecutionOpCode opcode;
-    uint16_t indirect;
     // FIXME: this should also accomodate immediates, etc.
     std::vector<MemoryAddress> operands;
     std::vector<MemoryAddress> resolved_operands;
@@ -23,7 +22,7 @@ struct ExecutionEvent {
 
 inline std::ostream& operator<<(std::ostream& os, const ExecutionEvent& s)
 {
-    os << "ExecutionEvent{pc=" << s.pc << ", opcode=" << s.opcode << ", indirect=" << s.indirect << ", operands=[";
+    os << "ExecutionEvent{pc=" << s.pc << ", opcode=" << s.opcode << ", operands=[";
     for (const auto& operand : s.operands) {
         os << operand << ", ";
     }

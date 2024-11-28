@@ -6,11 +6,13 @@ void TransactionExecution::simulate(const Tx& tx)
 {
     // TODO: other inter-enqueued-call stuff will be done here.
     for (const auto& call : tx.enqueued_calls) {
-        call_execution.execute(call.contract_address, call.args, call.sender, call.is_static);
+        auto result = call_execution.execute(call.contract_address, call.args, call.sender, call.is_static);
         info("Enqueued call to ",
              call.contract_address,
-             " returned ",
-             call_execution.get_top_level_returndata().size(),
+             " was a ",
+             result.success ? "success" : "failure",
+             " and it returned ",
+             result.returndata.size(),
              " elements.");
     }
 }
