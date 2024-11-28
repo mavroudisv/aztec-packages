@@ -1,14 +1,22 @@
 import { type ProverBrokerConfig } from '@aztec/circuit-types';
 import { AztecLmdbStore } from '@aztec/kv-store/lmdb';
 
+import { join } from 'path';
+
 import { ProvingBroker } from './proving_broker.js';
+import { ProvingBrokerDatabase } from './proving_broker_database.js';
 import { InMemoryBrokerDatabase } from './proving_broker_database/memory.js';
 import { KVBrokerDatabase } from './proving_broker_database/persisted.js';
 
 export async function createAndStartProvingBroker(config: ProverBrokerConfig): Promise<ProvingBroker> {
-  const database = config.proverBrokerDataDirectory
-    ? new KVBrokerDatabase(AztecLmdbStore.open(config.proverBrokerDataDirectory))
-    : new InMemoryBrokerDatabase();
+  let database: ProvingBrokerDatabase;
+  if (config.dataDirectory) {
+    const dataDir = join(config.dataDirectory, 'prover_broker');
+    const store = AztecLmdbStore.open(dataDir, config.dataStoreMapSizeKB);
+    database = new KVBrokerDatabase(store);
+  } else {
+    database = new InMemoryBrokerDatabase();
+  }
 
   const broker = new ProvingBroker(database, {
     jobTimeoutMs: config.proverBrokerJobTimeoutMs,
