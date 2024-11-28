@@ -12,6 +12,7 @@ void Alu::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_a
     // TODO: check types and tags and propagate.
     auto a = memory.get(a_addr);
     auto b = memory.get(b_addr);
+    // TODO: handle different types, wrapping, etc.
     auto c = a.value + b.value;
     memory.set(dst_addr, c, a.tag);
 

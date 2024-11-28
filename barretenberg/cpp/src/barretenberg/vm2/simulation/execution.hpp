@@ -18,6 +18,7 @@
 
 namespace bb::avm::simulation {
 
+// In charge of executing a single enqueued call.
 class Execution final {
   public:
     Execution(AluInterface& alu,
@@ -30,9 +31,8 @@ class Execution final {
         , events(event_emitter)
     {}
 
-    void execute(AztecAddress contract_address, std::span<const FF> calldata, AztecAddress msg_sender, bool is_static);
     void enter_context(std::unique_ptr<ContextInterface> context) { context_stack.push(std::move(context)); }
-    void run();
+    void execute(AztecAddress contract_address, std::span<const FF> calldata, AztecAddress msg_sender, bool is_static);
     std::span<const FF> get_top_level_returndata() const { return top_level_returndata; }
 
     void add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr);
@@ -42,6 +42,7 @@ class Execution final {
 
   private:
     ContextInterface& current_context() { return *context_stack.top(); }
+    void run();
 
     void dispatch_opcode(ExecutionOpCode opcode, const std::vector<MemoryAddress>& resolved_operands);
     template <typename... Ts>
