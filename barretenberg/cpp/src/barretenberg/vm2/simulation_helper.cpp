@@ -17,13 +17,15 @@ namespace bb::avm {
 
 using namespace bb::avm::simulation;
 
-EventsContainer AvmSimulationHelper::simulate()
+namespace {
+
+template <template <typename E> typename EventEmitterType> EventsContainer simulate_with_emitter()
 {
     // Simulate.
-    EventEmitter<ExecutionEvent> execution_emitter;
-    EventEmitter<AluEvent> alu_emitter;
-    EventEmitter<MemoryEvent> memory_emitter;
-    EventEmitter<AddressingEvent> addressing_emitter;
+    EventEmitterType<ExecutionEvent> execution_emitter;
+    EventEmitterType<AluEvent> alu_emitter;
+    EventEmitterType<MemoryEvent> memory_emitter;
+    EventEmitterType<AddressingEvent> addressing_emitter;
 
     Alu alu(alu_emitter);
     Addressing addressing(addressing_emitter);
@@ -41,6 +43,18 @@ EventsContainer AvmSimulationHelper::simulate()
              alu_emitter.dump_events(),
              memory_emitter.dump_events(),
              addressing_emitter.dump_events() };
+}
+
+} // namespace
+
+EventsContainer AvmSimulationHelper::simulate()
+{
+    return simulate_with_emitter<EventEmitter>();
+}
+
+void AvmSimulationHelper::simulate_fast()
+{
+    simulate_with_emitter<NoopEventEmitter>();
 }
 
 } // namespace bb::avm

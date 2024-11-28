@@ -10,7 +10,11 @@ class AvmSimulationHelper {
   public:
     AvmSimulationHelper() = default;
 
+    // Full simulation with event collection.
     simulation::EventsContainer simulate();
+
+    // Fast simulation without event collection.
+    void simulate_fast();
 };
 
 } // namespace bb::avm
