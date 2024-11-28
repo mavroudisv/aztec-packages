@@ -188,11 +188,12 @@ const std::unordered_map<WireOpCode, std::vector<OperandType>> WireOpCode_WIRE_F
 
 } // namespace
 
-Instruction decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
+std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
 {
-    const auto length = bytecode.size();
+    const auto bytecode_length = bytecode.size();
+    const auto starting_pos = pos;
 
-    assert(pos < length);
+    assert(pos < bytecode_length);
     // if (pos >= length) {
     //     info("Position is out of range. Position: " + std::to_string(pos) +
     //          " Bytecode length: " + std::to_string(length));
@@ -229,7 +230,7 @@ Instruction decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
     for (const OperandType op_type : inst_format) {
         // No underflow as above condition guarantees pos <= length (after pos++)
         const auto operand_size = OPERAND_TYPE_SIZE_BYTES.at(op_type);
-        assert(pos + operand_size <= length);
+        assert(pos + operand_size <= bytecode_length);
         // if (length - pos < operand_size) {
         //     info("Operand is missing at position " + std::to_string(pos) + " for WireOpCode " + to_hex(opcode) +
         //          " not enough bytes for operand type " + std::to_string(static_cast<int>(op_type)));
@@ -296,7 +297,7 @@ Instruction decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
         pos += operand_size;
     }
 
-    return { opcode, std::move(operands) };
+    return { { opcode, std::move(operands) }, static_cast<uint32_t>(pos - starting_pos) };
 };
 
 } // namespace bb::avm::simulation

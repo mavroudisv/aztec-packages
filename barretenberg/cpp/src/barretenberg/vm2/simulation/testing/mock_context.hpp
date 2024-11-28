@@ -18,6 +18,7 @@ class MockContext : public ContextInterface {
 
     // Machine state.
     MOCK_METHOD(MemoryInterface&, get_memory, (), (override));
+    MOCK_METHOD(BytecodeManagerInterface&, get_bytecode_manager, (), (override));
     MOCK_METHOD(uint32_t, get_pc, (), (const, override));
     MOCK_METHOD(void, set_pc, (uint32_t new_pc), (override));
     MOCK_METHOD(uint32_t, get_next_pc, (), (const, override));
@@ -35,7 +36,11 @@ class MockContextProvider : public ContextProviderInterface {
   public:
     MOCK_METHOD(std::unique_ptr<ContextInterface>,
                 make,
-                (AztecAddress contract_address, AztecAddress msg_sender, std::span<const FF> calldata, bool is_static),
+                (AztecAddress contract_address,
+                 AztecAddress msg_sender,
+                 std::span<const FF> calldata,
+                 bool is_static,
+                 std::span<const uint8_t> bytecode),
                 (const override));
 };
 

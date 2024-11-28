@@ -10,6 +10,27 @@
 #include "barretenberg/vm2/simulation/events/execution_event.hpp"
 
 namespace bb::avm::simulation {
+namespace {
+
+ExecutionOpCode wire_to_execution_opcode(WireOpCode opcode)
+{
+    switch (opcode) {
+    case WireOpCode::ADD_8:
+    case WireOpCode::ADD_16:
+        return ExecutionOpCode::ADD;
+    case WireOpCode::CALL:
+        return ExecutionOpCode::CALL;
+    case WireOpCode::RETURN:
+        return ExecutionOpCode::RETURN;
+    case WireOpCode::JUMPI_32:
+        return ExecutionOpCode::JUMPI;
+    default:
+        // throw std::runtime_error("Execution cannot handle opcode.");
+        return static_cast<ExecutionOpCode>(-1);
+    }
+}
+
+} // namespace
 
 void Execution::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
@@ -26,8 +47,13 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
     const auto [contract_address, _] = memory.get(addr);
 
     // TODO: should we do this in the main run() loop?
-    auto nested_context = context_provider.make(
-        std::move(contract_address), /*msg_sender=*/context.get_address(), /*calldata=*/{}, /*is_static=*/false);
+    // FIXME: I'm repeating everything that is in the run() loop and I don't like it.
+    const std::vector<uint8_t> bytecode = {}; // TODO: get bytecode from somewhere.
+    auto nested_context = context_provider.make(std::move(contract_address),
+                                                /*msg_sender=*/context.get_address(),
+                                                /*calldata=*/{},
+                                                /*is_static=*/false,
+                                                bytecode);
     enter_context(std::move(nested_context));
 }
 
@@ -66,7 +92,8 @@ void Execution::execute(AztecAddress contract_address,
                         AztecAddress msg_sender,
                         bool is_static)
 {
-    auto context = context_provider.make(contract_address, msg_sender, calldata, is_static);
+    const std::vector<uint8_t> bytecode = {}; // TODO: get bytecode from somewhere.
+    auto context = context_provider.make(contract_address, msg_sender, calldata, is_static, bytecode);
     enter_context(std::move(context));
     run();
 }
@@ -77,26 +104,26 @@ void Execution::run()
     while (!context_stack.empty()) {
         auto& context = current_context();
         auto& memory = current_context().get_memory();
-        auto pc = context.get_pc();
 
-        // FIXME: this is a placeholder.
-        ExecutionOpCode opcode = ExecutionOpCode::ADD;
-        uint8_t indirect = 0;
-        std::vector<MemoryAddress> operands = { 0, 1, 2, 3 };
-        uint32_t instruction_size = 4;
-        size_t num_addresses_to_resolve = 3;
-        context.set_next_pc(pc + instruction_size);
+        auto pc = context.get_pc();
+        auto [instruction, read_bytes] = context.get_bytecode_manager().read_instruction(pc);
+        context.set_next_pc(pc + read_bytes);
+
+        // Massage instruction.
+        auto opcode = wire_to_execution_opcode(instruction.opcode);
 
         // By this point we assume that the opcode is one of the valid execution opcodes.
         // TODO: catch failure.
-        auto resolved_operands = addressing.resolve(indirect, operands, num_addresses_to_resolve, memory);
+        uint8_t indirect = 0;
+        size_t num_addresses_to_resolve = 1;
+        auto resolved_operands = addressing.resolve(indirect, /*operands=*/{}, num_addresses_to_resolve, memory);
         // TODO: consider passing context.
         dispatch_opcode(opcode, resolved_operands);
 
         events.emit({ .pc = pc,
                       .opcode = opcode,
                       .indirect = indirect,
-                      .operands = operands,
+                      .operands = {}, // operands,
                       .resolved_operands = resolved_operands });
 
         context.set_pc(context.get_next_pc());

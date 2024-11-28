@@ -13,12 +13,12 @@ namespace bb::avm::simulation {
 
 struct Instruction {
     using Operand = std::variant<MemoryTag, uint8_t, uint16_t, uint32_t, uint64_t, uint128_t, FF>;
-    WireOpCode op_code;
+    WireOpCode opcode;
     std::vector<Operand> operands;
 
     Instruction() = delete;
-    Instruction(WireOpCode op_code, std::vector<Operand> operands)
-        : op_code(op_code)
+    Instruction(WireOpCode opcode, std::vector<Operand> operands)
+        : opcode(opcode)
         , operands(std::move(operands)){};
 };
 
@@ -30,8 +30,8 @@ struct Instruction {
  * @param bytecode The bytecode to be parsed as a vector of bytes/uint8_t
  * @param pos Bytecode position
  * @throws runtime_error exception when the bytecode is invalid or pos is out-of-range
- * @return The instruction
+ * @return The instruction and number of bytes read
  */
-Instruction decode_instruction(std::span<const uint8_t> bytecode, size_t pos);
+std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<const uint8_t> bytecode, size_t pos);
 
 } // namespace bb::avm::simulation
