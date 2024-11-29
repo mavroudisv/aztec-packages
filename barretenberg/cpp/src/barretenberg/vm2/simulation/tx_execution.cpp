@@ -2,7 +2,7 @@
 
 namespace bb::avm::simulation {
 
-void TransactionExecution::simulate(const Tx& tx)
+void TxExecution::simulate(const Tx& tx)
 {
     // TODO: other inter-enqueued-call stuff will be done here.
     for (const auto& call : tx.enqueued_calls) {

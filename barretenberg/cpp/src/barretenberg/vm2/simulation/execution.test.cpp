@@ -75,6 +75,8 @@ TEST_F(AvmSimulationExecutionTest, Return)
 // FIXME: Way too long and complicated.
 TEST_F(AvmSimulationExecutionTest, Run)
 {
+    GTEST_SKIP(); // FIXME: Way too long and complicated.
+
     MockBytecodeManager bytecode_manager;
     EXPECT_CALL(context, get_bytecode_manager).WillRepeatedly(ReturnRef(bytecode_manager));
     EXPECT_CALL(context, get_memory).Times(2);

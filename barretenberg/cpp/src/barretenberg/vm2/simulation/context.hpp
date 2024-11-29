@@ -88,32 +88,36 @@ class ContextProviderInterface {
     virtual std::unique_ptr<ContextInterface> make(AztecAddress address,
                                                    AztecAddress msg_sender,
                                                    std::span<const FF> calldata,
-                                                   bool is_static,
-                                                   std::span<const uint8_t> bytecode) const = 0;
+                                                   bool is_static) const = 0;
 };
 
 // This is the real thing. If you need a context made out of other objects, use a mock.
 class ContextProvider : public ContextProviderInterface {
   public:
-    ContextProvider(EventEmitterInterface<MemoryEvent>& memory_events)
-        : memory_events(memory_events)
+    ContextProvider(TxBytecodeManagerInterface& tx_bytecode_manager, EventEmitterInterface<MemoryEvent>& memory_events)
+        : tx_bytecode_manager(tx_bytecode_manager)
+        , memory_events(memory_events)
     {}
     std::unique_ptr<ContextInterface> make(AztecAddress address,
                                            AztecAddress msg_sender,
                                            std::span<const FF> calldata,
-                                           bool is_static,
-                                           std::span<const uint8_t> bytecode) const override
+                                           bool is_static) const override
     {
-        // FIXME: space id.
+        uint32_t space_id = static_cast<uint32_t>(address); // FIXME: space id.
+
+        // FIXME: doing too much in a "constructor"!
+        BytecodeId bytecode_id = tx_bytecode_manager.get_bytecode(address);
+
         return std::make_unique<Context>(address,
                                          msg_sender,
                                          calldata,
                                          is_static,
-                                         std::make_unique<BytecodeManager>(bytecode),
-                                         std::make_unique<Memory>(0, memory_events));
+                                         std::make_unique<BytecodeManager>(bytecode_id, tx_bytecode_manager),
+                                         std::make_unique<Memory>(space_id, memory_events));
     }
 
   private:
+    TxBytecodeManagerInterface& tx_bytecode_manager;
     EventEmitterInterface<MemoryEvent>& memory_events;
 };
 

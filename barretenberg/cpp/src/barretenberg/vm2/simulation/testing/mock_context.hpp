@@ -36,11 +36,7 @@ class MockContextProvider : public ContextProviderInterface {
   public:
     MOCK_METHOD(std::unique_ptr<ContextInterface>,
                 make,
-                (AztecAddress contract_address,
-                 AztecAddress msg_sender,
-                 std::span<const FF> calldata,
-                 bool is_static,
-                 std::span<const uint8_t> bytecode),
+                (AztecAddress contract_address, AztecAddress msg_sender, std::span<const FF> calldata, bool is_static),
                 (const override));
 };
 

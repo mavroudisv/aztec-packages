@@ -4,7 +4,7 @@
 
 namespace bb::avm {
 
-// Types for type safety.
 using AztecAddress = simulation::FF;
+using ContractClassId = simulation::FF;
 
 } // namespace bb::avm

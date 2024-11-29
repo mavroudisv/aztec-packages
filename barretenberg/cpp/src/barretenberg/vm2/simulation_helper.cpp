@@ -9,6 +9,7 @@
 #include "barretenberg/vm2/common/field.hpp"
 #include "barretenberg/vm2/simulation/addressing.hpp"
 #include "barretenberg/vm2/simulation/alu.hpp"
+#include "barretenberg/vm2/simulation/bytecode_manager.hpp"
 #include "barretenberg/vm2/simulation/context.hpp"
 #include "barretenberg/vm2/simulation/execution.hpp"
 #include "barretenberg/vm2/simulation/tx_execution.hpp"
@@ -45,9 +46,10 @@ template <typename S> EventsContainer simulate_with_emitter()
 
     Alu alu(alu_emitter);
     Addressing addressing(addressing_emitter);
-    ContextProvider context_provider(memory_emitter);
+    TxBytecodeManager bytecode_manager;
+    ContextProvider context_provider(bytecode_manager, memory_emitter);
     Execution execution(alu, addressing, context_provider, execution_emitter);
-    TransactionExecution tx_execution(execution);
+    TxExecution tx_execution(execution);
 
     std::vector<PublicExecutionRequest> enqueued_calls = {
         { AztecAddress(0xdeadbeef), AztecAddress(0), { 1, 2, 3, 4 }, false },

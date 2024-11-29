@@ -9,13 +9,11 @@
 #include "barretenberg/vm2/simulation/addressing.hpp"
 #include "barretenberg/vm2/simulation/context.hpp"
 #include "barretenberg/vm2/simulation/events/execution_event.hpp"
-#include "barretenberg/vm2/simulation/serialization.hpp"
 
 namespace bb::avm::simulation {
 
 void Execution::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddress b_addr, MemoryAddress dst_addr)
 {
-    // TODO: track interaction.
     alu.add(context, a_addr, b_addr, dst_addr);
 }
 
@@ -29,12 +27,10 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
 
     // TODO: should we do this in the main run() loop?
     // FIXME: I'm repeating everything that is in the run() loop and I don't like it.
-    const std::vector<uint8_t> bytecode = {}; // TODO: get bytecode from somewhere.
     auto nested_context = context_provider.make(std::move(contract_address),
                                                 /*msg_sender=*/context.get_address(),
                                                 /*calldata=*/{},
-                                                /*is_static=*/false,
-                                                bytecode);
+                                                /*is_static=*/false);
     enter_context(std::move(nested_context));
 }
 
@@ -76,8 +72,7 @@ ExecutionResult Execution::execute(AztecAddress contract_address,
                                    AztecAddress msg_sender,
                                    bool is_static)
 {
-    const std::vector<uint8_t> bytecode = {}; // TODO: get bytecode from somewhere.
-    auto context = context_provider.make(contract_address, msg_sender, calldata, is_static, bytecode);
+    auto context = context_provider.make(contract_address, msg_sender, calldata, is_static);
     enter_context(std::move(context));
     run();
     return std::move(top_level_result);

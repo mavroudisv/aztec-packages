@@ -18,9 +18,9 @@ struct Tx {
 };
 
 // In charge of executing a transaction.
-class TransactionExecution final {
+class TxExecution final {
   public:
-    TransactionExecution(ExecutionInterface& call_execution)
+    TxExecution(ExecutionInterface& call_execution)
         : call_execution(call_execution){};
 
     void simulate(const Tx& tx);
