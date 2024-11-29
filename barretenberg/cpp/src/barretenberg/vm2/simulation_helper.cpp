@@ -19,13 +19,29 @@ using namespace bb::avm::simulation;
 
 namespace {
 
-template <template <typename E> typename EventEmitterType> EventsContainer simulate_with_emitter()
+// Configuration for full simulation (for proving).
+struct RealEmitterSettings {
+    using ExecutionEventEmitter = EventEmitter<ExecutionEvent>;
+    using AluEventEmitter = EventEmitter<AluEvent>;
+    using MemoryEventEmitter = EventEmitter<MemoryEvent>;
+    using AddressingEventEmitter = EventEmitter<AddressingEvent>;
+};
+
+// Configuration for fast simulation.
+struct NoopEmitterSettings {
+    using ExecutionEventEmitter = NoopEventEmitter<ExecutionEvent>;
+    using AluEventEmitter = NoopEventEmitter<AluEvent>;
+    using MemoryEventEmitter = NoopEventEmitter<MemoryEvent>;
+    using AddressingEventEmitter = NoopEventEmitter<AddressingEvent>;
+};
+
+template <typename S> EventsContainer simulate_with_emitter()
 {
     // Simulate.
-    EventEmitterType<ExecutionEvent> execution_emitter;
-    EventEmitterType<AluEvent> alu_emitter;
-    EventEmitterType<MemoryEvent> memory_emitter;
-    EventEmitterType<AddressingEvent> addressing_emitter;
+    typename S::ExecutionEventEmitter execution_emitter;
+    typename S::AluEventEmitter alu_emitter;
+    typename S::MemoryEventEmitter memory_emitter;
+    typename S::AddressingEventEmitter addressing_emitter;
 
     Alu alu(alu_emitter);
     Addressing addressing(addressing_emitter);
@@ -49,12 +65,12 @@ template <template <typename E> typename EventEmitterType> EventsContainer simul
 
 EventsContainer AvmSimulationHelper::simulate()
 {
-    return simulate_with_emitter<EventEmitter>();
+    return simulate_with_emitter<RealEmitterSettings>();
 }
 
 void AvmSimulationHelper::simulate_fast()
 {
-    simulate_with_emitter<NoopEventEmitter>();
+    simulate_with_emitter<NoopEmitterSettings>();
 }
 
 } // namespace bb::avm
