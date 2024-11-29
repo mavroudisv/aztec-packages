@@ -15,29 +15,34 @@ BytecodeId TxBytecodeManager::get_bytecode(const AztecAddress& address)
     // TODO: Resolve, fetch, etc.
     auto bytecode = std::vector<uint8_t>();
 
-    // TODO: Hash bytecode.
+    FF hash = 45;                       // TODO: Hash bytecode.
+    ContractClassId class_id = address; // TODO: trigger calculation.
+    // OK OKKKK *maybe* it makes sense to use a shared_ptr with bytecode.
+    hash_events.emit({ .class_id = class_id, .bytecode = bytecode, .hash = hash });
 
     // We now save the bytecode so that we don't repeat this process.
-    ContractClassId class_id = address; // TODO: trigger calculation.
     auto bytecode_id = next_bytecode_id++;
     resolved_addresses[address] = bytecode_id;
-    bytecodes.emplace(
-        std::make_pair(bytecode_id, BytecodeInfo{ .bytecode = std::move(bytecode), .class_id = class_id }));
+    bytecodes.emplace(bytecode_id, BytecodeInfo{ .bytecode = std::move(bytecode), .class_id = class_id });
 
     return bytecode_id;
 }
 
-std::pair<Instruction, uint32_t> TxBytecodeManager::read_instruction(BytecodeId bytecode_id, size_t pc)
+std::pair<Instruction, uint32_t> TxBytecodeManager::read_instruction(BytecodeId bytecode_id, uint32_t pc)
 {
     auto it = bytecodes.find(bytecode_id);
     if (it == bytecodes.end()) {
         throw std::runtime_error("Bytecode not found");
     }
 
-    // TODO: trigger decomposition
-
     const auto& bytecode = it->second.bytecode;
-    return decode_instruction(bytecode, pc);
+    // TODO: catch errors etc.
+    auto instruction_and_bytes = decode_instruction(bytecode, pc);
+
+    decomposition_events.emit(
+        { .class_id = it->second.class_id, .pc = pc, .instruction = instruction_and_bytes.first });
+
+    return instruction_and_bytes;
 }
 
 ContractClassId TxBytecodeManager::get_class_id(BytecodeId bytecode_id) const

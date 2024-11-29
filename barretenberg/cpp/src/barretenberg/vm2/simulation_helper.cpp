@@ -21,32 +21,37 @@ using namespace bb::avm::simulation;
 namespace {
 
 // Configuration for full simulation (for proving).
-struct RealEmitterSettings {
+struct ProvingSettings {
     using ExecutionEventEmitter = EventEmitter<ExecutionEvent>;
     using AluEventEmitter = EventEmitter<AluEvent>;
     using MemoryEventEmitter = EventEmitter<MemoryEvent>;
     using AddressingEventEmitter = EventEmitter<AddressingEvent>;
+    using BytecodeHashingEventEmitter = EventEmitter<BytecodeHashingEvent>;
+    using BytecodeDecompositionEventEmitter = EventEmitter<BytecodeDecompositionEvent>;
 };
 
 // Configuration for fast simulation.
-struct NoopEmitterSettings {
+struct FastSettings {
     using ExecutionEventEmitter = NoopEventEmitter<ExecutionEvent>;
     using AluEventEmitter = NoopEventEmitter<AluEvent>;
     using MemoryEventEmitter = NoopEventEmitter<MemoryEvent>;
     using AddressingEventEmitter = NoopEventEmitter<AddressingEvent>;
+    using BytecodeHashingEventEmitter = NoopEventEmitter<BytecodeHashingEvent>;
+    using BytecodeDecompositionEventEmitter = NoopEventEmitter<BytecodeDecompositionEvent>;
 };
 
-template <typename S> EventsContainer simulate_with_emitter()
+template <typename S> EventsContainer simulate_with_settings()
 {
-    // Simulate.
     typename S::ExecutionEventEmitter execution_emitter;
     typename S::AluEventEmitter alu_emitter;
     typename S::MemoryEventEmitter memory_emitter;
     typename S::AddressingEventEmitter addressing_emitter;
+    typename S::BytecodeHashingEventEmitter bytecode_hashing_emitter;
+    typename S::BytecodeDecompositionEventEmitter bytecode_decomposition_emitter;
 
     Alu alu(alu_emitter);
     Addressing addressing(addressing_emitter);
-    TxBytecodeManager bytecode_manager;
+    TxBytecodeManager bytecode_manager(bytecode_hashing_emitter, bytecode_decomposition_emitter);
     ContextProvider context_provider(bytecode_manager, memory_emitter);
     Execution execution(alu, addressing, context_provider, execution_emitter);
     TxExecution tx_execution(execution);
@@ -57,22 +62,21 @@ template <typename S> EventsContainer simulate_with_emitter()
     };
     tx_execution.simulate({ enqueued_calls });
 
-    return { execution_emitter.dump_events(),
-             alu_emitter.dump_events(),
-             memory_emitter.dump_events(),
-             addressing_emitter.dump_events() };
+    return { execution_emitter.dump_events(),        alu_emitter.dump_events(),
+             memory_emitter.dump_events(),           addressing_emitter.dump_events(),
+             bytecode_hashing_emitter.dump_events(), bytecode_decomposition_emitter.dump_events() };
 }
 
 } // namespace
 
 EventsContainer AvmSimulationHelper::simulate()
 {
-    return simulate_with_emitter<RealEmitterSettings>();
+    return simulate_with_settings<ProvingSettings>();
 }
 
 void AvmSimulationHelper::simulate_fast()
 {
-    simulate_with_emitter<NoopEmitterSettings>();
+    simulate_with_settings<FastSettings>();
 }
 
 } // namespace bb::avm
