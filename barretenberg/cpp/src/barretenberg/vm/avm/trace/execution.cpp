@@ -164,12 +164,10 @@ void show_trace_info(const auto& trace)
 } // namespace
 
 // Needed for dependency injection in tests.
-Execution::TraceBuilderConstructor Execution::trace_builder_constructor = [](AvmPublicInputs public_inputs,
-                                                                             ExecutionHints execution_hints,
-                                                                             uint32_t side_effect_counter,
-                                                                             std::vector<FF> calldata) {
-    return AvmTraceBuilder(public_inputs, std::move(execution_hints), side_effect_counter, std::move(calldata));
-};
+Execution::TraceBuilderConstructor Execution::trace_builder_constructor =
+    [](AvmPublicInputs public_inputs, ExecutionHints execution_hints, uint32_t side_effect_counter) {
+        return AvmTraceBuilder(public_inputs, std::move(execution_hints), side_effect_counter);
+    };
 
 /**
  * @brief Temporary routine to generate default public inputs (gas values) until we get
@@ -289,7 +287,6 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
     vinfo("------- GENERATING TRACE -------");
     // TODO(https://github.com/AztecProtocol/aztec-packages/issues/6718): construction of the public input columns
     // should be done in the kernel - this is stubbed and underconstrained
-    // VmPublicInputs public_inputs = avm_trace::convert_public_inputs(public_inputs_vec);
     uint32_t start_side_effect_counter = 0;
     // Temporary until we get proper nested call handling
     std::vector<FF> calldata;
@@ -297,7 +294,8 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
         calldata.insert(calldata.end(), enqueued_call_hints.calldata.begin(), enqueued_call_hints.calldata.end());
     }
     AvmTraceBuilder trace_builder =
-        Execution::trace_builder_constructor(public_inputs, execution_hints, start_side_effect_counter, calldata);
+        Execution::trace_builder_constructor(public_inputs, execution_hints, start_side_effect_counter);
+    trace_builder.set_all_calldata(calldata);
 
     // Temporary spot for private non-revertible insertion
     std::vector<FF> siloed_nullifiers;
@@ -312,7 +310,6 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
     public_teardown_call_requests[0] = public_inputs.public_teardown_call_request;
 
     // Loop over all the public call requests
-    uint8_t call_ctx = 0;
     auto const phases = { TxExecutionPhase::SETUP, TxExecutionPhase::APP_LOGIC, TxExecutionPhase::TEARDOWN };
     for (auto phase : phases) {
         auto call_requests_array = phase == TxExecutionPhase::SETUP       ? public_inputs.public_setup_call_requests
@@ -342,15 +339,30 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
 
             auto public_call_request = public_call_requests.at(i);
             trace_builder.set_public_call_request(public_call_request);
-            trace_builder.set_call_ptr(call_ctx++);
+
+            // At the start of each enqueued call, we read the enqueued call hints
+            auto enqueued_call_hint = execution_hints.enqueued_call_hints.at(i);
+
+            ASSERT(public_call_request.contract_address == enqueued_call_hint.contract_address);
+            // These hints help us to set up first call ctx
+            uint32_t clk = trace_builder.get_clk();
+            trace_builder.current_ext_call_ctx = AvmTraceBuilder::ExtCallCtx{
+                .context_id = clk,
+                .parent_id = 0,
+                .contract_address = enqueued_call_hint.contract_address,
+                .calldata = enqueued_call_hint.calldata,
+                .nested_returndata = {},
+                .last_pc = 0,
+                .success_offset = 0,
+                .l2_gas = 0,
+                .da_gas = 0,
+            };
 
             // Find the bytecode based on contract address of the public call request
-            const std::vector<uint8_t>& bytecode = std::ranges::find_if(execution_hints.all_contract_bytecode,
-                                                                        [public_call_request](const auto& contract) {
-                                                                            return contract.contract_instance.address ==
-                                                                                   public_call_request.contract_address;
-                                                                        })
-                                                       ->bytecode;
+            std::vector<uint8_t> bytecode =
+                std::ranges::find_if(execution_hints.all_contract_bytecode, [trace_builder](const auto contract) {
+                    return contract.contract_instance.address == trace_builder.current_ext_call_ctx.contract_address;
+                })->bytecode;
             info("Found bytecode for contract address: ", public_call_request.contract_address);
 
             // Set this also on nested call
@@ -360,6 +372,8 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
             // is determined by this value which require read access to the code below.
             uint32_t pc = 0;
             uint32_t counter = 0;
+            AvmError error = AvmError::NO_ERROR;
+            trace_builder.set_call_ptr(static_cast<uint8_t>(trace_builder.current_ext_call_ctx.context_id));
             while (is_ok(error) && (pc = trace_builder.get_pc()) < bytecode.size()) {
                 auto [inst, parse_error] = Deserialization::parse(bytecode, pc);
                 error = parse_error;
@@ -750,29 +764,64 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
                     break;
 
                     // Control Flow - Contract Calls
-                case OpCode::CALL:
+                case OpCode::CALL: {
                     error = trace_builder.op_call(std::get<uint16_t>(inst.operands.at(0)),
                                                   std::get<uint16_t>(inst.operands.at(1)),
                                                   std::get<uint16_t>(inst.operands.at(2)),
                                                   std::get<uint16_t>(inst.operands.at(3)),
                                                   std::get<uint16_t>(inst.operands.at(4)),
                                                   std::get<uint16_t>(inst.operands.at(5)));
+                    // We hack it in here the logic to change contract address that we are processing
+                    auto target_contract_address = trace_builder.current_ext_call_ctx.contract_address;
+                    bytecode =
+                        std::ranges::find_if(execution_hints.all_contract_bytecode,
+                                             [target_contract_address](const auto& contract) {
+                                                 return contract.contract_instance.address == target_contract_address;
+                                             })
+                            ->bytecode;
+                    trace_builder.set_pc(0);
+                    trace_builder.set_call_ptr(static_cast<uint8_t>(trace_builder.current_ext_call_ctx.context_id));
+                    counter = 0;
                     break;
-                case OpCode::STATICCALL:
+                }
+                case OpCode::STATICCALL: {
                     error = trace_builder.op_static_call(std::get<uint16_t>(inst.operands.at(0)),
                                                          std::get<uint16_t>(inst.operands.at(1)),
                                                          std::get<uint16_t>(inst.operands.at(2)),
                                                          std::get<uint16_t>(inst.operands.at(3)),
                                                          std::get<uint16_t>(inst.operands.at(4)),
                                                          std::get<uint16_t>(inst.operands.at(5)));
+                    // We hack it in here the logic to change contract address that we are processing
+                    bytecode = std::ranges::find_if(execution_hints.all_contract_bytecode,
+                                                    [&trace_builder](const auto& contract) {
+                                                        return contract.contract_instance.address ==
+                                                               trace_builder.current_ext_call_ctx.contract_address;
+                                                    })
+                                   ->bytecode;
+                    trace_builder.set_pc(0);
+                    trace_builder.set_call_ptr(static_cast<uint8_t>(trace_builder.current_ext_call_ctx.context_id));
+                    counter = 0;
                     break;
+                }
                 case OpCode::RETURN: {
                     auto ret = trace_builder.op_return(std::get<uint8_t>(inst.operands.at(0)),
                                                        std::get<uint16_t>(inst.operands.at(1)),
                                                        std::get<uint16_t>(inst.operands.at(2)));
-                    error = ret.error;
-                    returndata.insert(returndata.end(), ret.return_data.begin(), ret.return_data.end());
+                    // We hack it in here the logic to change contract address that we are processing
+                    if (ret.is_top_level) {
+                        error = ret.error;
+                        returndata.insert(returndata.end(), ret.return_data.begin(), ret.return_data.end());
 
+                    } else {
+                        bytecode = std::ranges::find_if(execution_hints.all_contract_bytecode,
+                                                        [&trace_builder](const auto& contract) {
+                                                            return contract.contract_instance.address ==
+                                                                   trace_builder.current_ext_call_ctx.contract_address;
+                                                        })
+                                       ->bytecode;
+                        trace_builder.set_pc(trace_builder.current_ext_call_ctx.last_pc);
+                        trace_builder.set_call_ptr(static_cast<uint8_t>(trace_builder.current_ext_call_ctx.context_id));
+                    }
                     break;
                 }
                 case OpCode::REVERT_8: {
@@ -780,8 +829,20 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
                     auto ret = trace_builder.op_revert(std::get<uint8_t>(inst.operands.at(0)),
                                                        std::get<uint8_t>(inst.operands.at(1)),
                                                        std::get<uint8_t>(inst.operands.at(2)));
-                    error = ret.error;
-                    returndata.insert(returndata.end(), ret.return_data.begin(), ret.return_data.end());
+                    if (ret.is_top_level) {
+                        error = ret.error;
+                        returndata.insert(returndata.end(), ret.return_data.begin(), ret.return_data.end());
+                    } else {
+                        // change to the current ext call ctx
+                        bytecode = std::ranges::find_if(execution_hints.all_contract_bytecode,
+                                                        [&trace_builder](const auto& contract) {
+                                                            return contract.contract_instance.address ==
+                                                                   trace_builder.current_ext_call_ctx.contract_address;
+                                                        })
+                                       ->bytecode;
+                        trace_builder.set_pc(trace_builder.current_ext_call_ctx.last_pc);
+                        trace_builder.set_call_ptr(static_cast<uint8_t>(trace_builder.current_ext_call_ctx.context_id));
+                    }
 
                     break;
                 }
@@ -790,8 +851,20 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
                     auto ret = trace_builder.op_revert(std::get<uint8_t>(inst.operands.at(0)),
                                                        std::get<uint16_t>(inst.operands.at(1)),
                                                        std::get<uint16_t>(inst.operands.at(2)));
-                    error = ret.error;
-                    returndata.insert(returndata.end(), ret.return_data.begin(), ret.return_data.end());
+                    if (ret.is_top_level) {
+                        error = ret.error;
+                        returndata.insert(returndata.end(), ret.return_data.begin(), ret.return_data.end());
+                    } else {
+                        // change to the current ext call ctx
+                        bytecode = std::ranges::find_if(execution_hints.all_contract_bytecode,
+                                                        [&trace_builder](const auto& contract) {
+                                                            return contract.contract_instance.address ==
+                                                                   trace_builder.current_ext_call_ctx.contract_address;
+                                                        })
+                                       ->bytecode;
+                        trace_builder.set_pc(trace_builder.current_ext_call_ctx.last_pc);
+                        trace_builder.set_call_ptr(static_cast<uint8_t>(trace_builder.current_ext_call_ctx.context_id));
+                    }
 
                     break;
                 }
@@ -888,6 +961,8 @@ std::vector<Row> Execution::gen_trace(AvmPublicInputs const& public_inputs,
         }
     }
     auto trace = trace_builder.finalize(apply_end_gas_assertions);
+
+    returndata = trace_builder.get_all_returndata();
 
     show_trace_info(trace);
     return trace;

@@ -10,11 +10,11 @@ template <typename FF_> class mainImpl {
   public:
     using FF = FF_;
 
-    static constexpr std::array<size_t, 113> SUBRELATION_PARTIAL_LENGTHS = {
-        2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5, 4, 4, 3, 3, 3, 3, 4, 3, 3,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 5, 3, 3, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 2, 3
+    static constexpr std::array<size_t, 112> SUBRELATION_PARTIAL_LENGTHS = {
+        2, 3, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5, 4, 4, 3, 3, 3, 3,
+        4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 5, 3, 3, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 3
     };
 
     template <typename ContainerOverSubrelations, typename AllEntities>
@@ -769,25 +769,17 @@ template <typename FF_> class mainImpl {
         }
         {
             using Accumulator = typename std::tuple_element_t<110, ContainerOverSubrelations>;
-            auto tmp = ((new_term.main_ib * (FF(1) - new_term.main_op_err)) *
-                        ((new_term.main_sel_op_calldata_copy + new_term.main_sel_op_external_return) -
-                         new_term.main_sel_slice_gadget));
+            auto tmp = (new_term.main_bin_op_id - (new_term.main_sel_op_or + (FF(2) * new_term.main_sel_op_xor)));
             tmp *= scaling_factor;
             std::get<110>(evals) += typename Accumulator::View(tmp);
         }
         {
             using Accumulator = typename std::tuple_element_t<111, ContainerOverSubrelations>;
-            auto tmp = (new_term.main_bin_op_id - (new_term.main_sel_op_or + (FF(2) * new_term.main_sel_op_xor)));
-            tmp *= scaling_factor;
-            std::get<111>(evals) += typename Accumulator::View(tmp);
-        }
-        {
-            using Accumulator = typename std::tuple_element_t<112, ContainerOverSubrelations>;
             auto tmp = (new_term.main_sel_bin -
                         (((new_term.main_sel_op_and + new_term.main_sel_op_or) + new_term.main_sel_op_xor) *
                          (FF(1) - new_term.main_op_err)));
             tmp *= scaling_factor;
-            std::get<112>(evals) += typename Accumulator::View(tmp);
+            std::get<111>(evals) += typename Accumulator::View(tmp);
         }
     }
 };
@@ -843,9 +835,9 @@ template <typename FF> class main : public Relation<mainImpl<FF>> {
             return "L2GASLEFT";
         case 109:
             return "DAGASLEFT";
-        case 111:
+        case 110:
             return "BIN_SEL_1";
-        case 112:
+        case 111:
             return "BIN_SEL_2";
         }
         return std::to_string(index);

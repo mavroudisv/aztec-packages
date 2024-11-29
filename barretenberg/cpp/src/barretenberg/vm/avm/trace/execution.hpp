@@ -24,10 +24,8 @@ std::string to_name(TxExecutionPhase phase);
 class Execution {
   public:
     static constexpr size_t SRS_SIZE = 1 << 22;
-    using TraceBuilderConstructor = std::function<AvmTraceBuilder(AvmPublicInputs public_inputs,
-                                                                  ExecutionHints execution_hints,
-                                                                  uint32_t side_effect_counter,
-                                                                  std::vector<FF> calldata)>;
+    using TraceBuilderConstructor = std::function<AvmTraceBuilder(
+        AvmPublicInputs public_inputs, ExecutionHints execution_hints, uint32_t side_effect_counter)>;
 
     Execution() = default;
 
