@@ -12,6 +12,8 @@
 #include "barretenberg/vm2/simulation/bytecode_manager.hpp"
 #include "barretenberg/vm2/simulation/context.hpp"
 #include "barretenberg/vm2/simulation/execution.hpp"
+#include "barretenberg/vm2/simulation/lib/avm_inputs.hpp"
+#include "barretenberg/vm2/simulation/lib/raw_data_db.hpp"
 #include "barretenberg/vm2/simulation/tx_execution.hpp"
 
 namespace bb::avm {
@@ -49,10 +51,13 @@ template <typename S> EventsContainer simulate_with_settings()
     typename S::BytecodeHashingEventEmitter bytecode_hashing_emitter;
     typename S::BytecodeDecompositionEventEmitter bytecode_decomposition_emitter;
 
+    ExecutionHints hints; // TODO: actually load them.
+    HintedRawDataDB db(hints);
+    TxBytecodeManager bytecode_manager(db, bytecode_hashing_emitter, bytecode_decomposition_emitter);
+    ContextProvider context_provider(bytecode_manager, memory_emitter);
+
     Alu alu(alu_emitter);
     Addressing addressing(addressing_emitter);
-    TxBytecodeManager bytecode_manager(bytecode_hashing_emitter, bytecode_decomposition_emitter);
-    ContextProvider context_provider(bytecode_manager, memory_emitter);
     Execution execution(alu, addressing, context_provider, execution_emitter);
     TxExecution tx_execution(execution);
 

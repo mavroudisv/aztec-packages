@@ -1,7 +1,7 @@
 #pragma once
 
 #include "barretenberg/vm2/common/aztec_types.hpp"
-#include "barretenberg/vm2/simulation/lib/hints.hpp"
+#include "barretenberg/vm2/simulation/lib/avm_inputs.hpp"
 
 namespace bb::avm::simulation {
 
@@ -22,8 +22,8 @@ class HintedRawDataDB : public RawDataDBInterface {
     ContractClass get_contract_class(const ContractClassId& class_id) const override;
 
   private:
-    std::vector<ContractInstance> contract_instances;
-    std::vector<ContractClass> contract_classes;
+    std::vector<ContractInstanceHint> contract_instances;
+    std::vector<ContractClassHint> contract_classes;
     mutable size_t contract_instances_idx = 0;
     mutable size_t contract_classes_idx = 0;
 };

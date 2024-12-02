@@ -10,6 +10,7 @@
 #include "barretenberg/vm2/common/aztec_types.hpp"
 #include "barretenberg/vm2/simulation/events/bytecode_events.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
+#include "barretenberg/vm2/simulation/lib/raw_data_db.hpp"
 #include "barretenberg/vm2/simulation/lib/serialization.hpp"
 
 namespace bb::avm::simulation {
@@ -34,9 +35,11 @@ class TxBytecodeManagerInterface {
 
 class TxBytecodeManager : public TxBytecodeManagerInterface {
   public:
-    TxBytecodeManager(EventEmitterInterface<BytecodeHashingEvent>& hash_events,
+    TxBytecodeManager(RawDataDBInterface& db,
+                      EventEmitterInterface<BytecodeHashingEvent>& hash_events,
                       EventEmitterInterface<BytecodeDecompositionEvent>& decomposition_events)
-        : hash_events(hash_events)
+        : db(db)
+        , hash_events(hash_events)
         , decomposition_events(decomposition_events)
     {}
 
@@ -52,6 +55,7 @@ class TxBytecodeManager : public TxBytecodeManagerInterface {
         ContractClassId class_id;
     };
 
+    RawDataDBInterface& db;
     EventEmitterInterface<BytecodeHashingEvent>& hash_events;
     EventEmitterInterface<BytecodeDecompositionEvent>& decomposition_events;
     std::unordered_map<BytecodeId, const BytecodeInfo> bytecodes;

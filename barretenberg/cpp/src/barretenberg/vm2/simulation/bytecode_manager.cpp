@@ -10,24 +10,27 @@ namespace bb::avm::simulation {
 
 BytecodeId TxBytecodeManager::get_bytecode(const AztecAddress& address)
 {
-    auto it = resolved_addresses.find(address);
-    if (it != resolved_addresses.end()) {
-        return it->second;
-    }
+    // TODO: in principle we want to do this, but we can't make hints fail. Think about it.
+    // auto it = resolved_addresses.find(address);
+    // if (it != resolved_addresses.end()) {
+    //     return it->second;
+    // }
 
-    // TODO: Resolve, fetch, etc.
-    auto bytecode = std::vector<uint8_t>();
-
-    FF hash = compute_public_bytecode_commitment(bytecode);
-    ContractClassId class_id = address; // TODO: trigger calculation.
+    // TODO: catch errors etc.
+    // TODO: we should trigger the proper merkle checks etc. The raw DB doesn't.
+    ContractInstance instance = db.get_contract_instance(address);
+    ContractClass klass = db.get_contract_class(instance.contract_class_id);
+    FF hash = compute_public_bytecode_commitment(klass.packed_bytecode);
 
     // OK OKKKK *maybe* it makes sense to use a shared_ptr with bytecode.
-    hash_events.emit({ .class_id = class_id, .bytecode = bytecode, .hash = hash });
+    hash_events.emit({ .class_id = instance.contract_class_id, .bytecode = klass.packed_bytecode, .hash = hash });
 
     // We now save the bytecode so that we don't repeat this process.
     auto bytecode_id = next_bytecode_id++;
     resolved_addresses[address] = bytecode_id;
-    bytecodes.emplace(bytecode_id, BytecodeInfo{ .bytecode = std::move(bytecode), .class_id = class_id });
+    bytecodes.emplace(
+        bytecode_id,
+        BytecodeInfo{ .bytecode = std::move(klass.packed_bytecode), .class_id = instance.contract_class_id });
 
     return bytecode_id;
 }
