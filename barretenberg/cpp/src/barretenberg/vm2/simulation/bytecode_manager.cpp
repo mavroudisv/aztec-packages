@@ -4,7 +4,7 @@
 #include "barretenberg/crypto/poseidon2/poseidon2.hpp"
 #include "barretenberg/crypto/poseidon2/poseidon2_params.hpp"
 #include "barretenberg/vm2/common/aztec_types.hpp"
-#include "barretenberg/vm2/simulation/serialization.hpp"
+#include "barretenberg/vm2/simulation/lib/serialization.hpp"
 
 namespace bb::avm::simulation {
 

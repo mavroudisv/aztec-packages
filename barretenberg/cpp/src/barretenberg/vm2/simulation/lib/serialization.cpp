@@ -1,4 +1,4 @@
-#include "barretenberg/vm2/simulation/serialization.hpp"
+#include "barretenberg/vm2/simulation/lib/serialization.hpp"
 
 #include <cassert>
 #include <cstdint>
