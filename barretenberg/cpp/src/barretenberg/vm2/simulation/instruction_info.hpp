@@ -25,6 +25,8 @@ class InstructionInformation : public InstructionInformationInterface {
 
     InstructionSpec get(ExecutionOpCode opcode) override
     {
+        // FIXME: I think we don't need events here!
+        // This will be a fixed table, and we can handle the lookups in tracegen.
         events.emit({ .opcode = opcode });
         return INSTRUCTION_SPEC.at(opcode);
     }

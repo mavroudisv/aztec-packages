@@ -1,5 +1,8 @@
 #include "barretenberg/vm2/simulation/bytecode_manager.hpp"
 
+#include "barretenberg/common/serialize.hpp"
+#include "barretenberg/crypto/poseidon2/poseidon2.hpp"
+#include "barretenberg/crypto/poseidon2/poseidon2_params.hpp"
 #include "barretenberg/vm2/common/aztec_types.hpp"
 #include "barretenberg/vm2/simulation/serialization.hpp"
 
@@ -15,8 +18,9 @@ BytecodeId TxBytecodeManager::get_bytecode(const AztecAddress& address)
     // TODO: Resolve, fetch, etc.
     auto bytecode = std::vector<uint8_t>();
 
-    FF hash = 45;                       // TODO: Hash bytecode.
+    FF hash = compute_public_bytecode_commitment(bytecode);
     ContractClassId class_id = address; // TODO: trigger calculation.
+
     // OK OKKKK *maybe* it makes sense to use a shared_ptr with bytecode.
     hash_events.emit({ .class_id = class_id, .bytecode = bytecode, .hash = hash });
 
@@ -53,6 +57,34 @@ ContractClassId TxBytecodeManager::get_class_id(BytecodeId bytecode_id) const
     }
 
     return it->second.class_id;
+}
+
+FF TxBytecodeManager::compute_public_bytecode_commitment(std::span<const uint8_t> bytecode)
+{
+    auto encode_bytecode = [](std::span<const uint8_t> contract_bytes) -> std::vector<FF> {
+        // To make from_buffer<uint256_t> work properly, we need to make sure the contract is a multiple of 31 bytes
+        // Otherwise we will end up over-reading the buffer
+        size_t padded_size = 31 * ((contract_bytes.size() + 30) / 31);
+        // We dont want to mutate the original contract bytes, since we will (probably) need them later in the trace
+        // unpadded
+        std::vector<uint8_t> contract_bytes_padded(contract_bytes.begin(), contract_bytes.end());
+        contract_bytes_padded.resize(padded_size, 0);
+        std::vector<FF> contract_bytecode_fields;
+        for (size_t i = 0; i < contract_bytes_padded.size(); i += 31) {
+            uint256_t u256_elem = from_buffer<uint256_t>(contract_bytes_padded, i);
+            // Drop the last byte
+            contract_bytecode_fields.emplace_back(u256_elem >> 8);
+        }
+        return contract_bytecode_fields;
+    };
+
+    std::vector<FF> contract_bytecode_fields = encode_bytecode(bytecode);
+    FF running_hash = 0;
+    for (const auto& contract_bytecode_field : contract_bytecode_fields) {
+        using poseidon2 = crypto::Poseidon2<crypto::Poseidon2Bn254ScalarFieldParams>;
+        running_hash = poseidon2::hash({ contract_bytecode_field, running_hash });
+    }
+    return running_hash;
 }
 
 } // namespace bb::avm::simulation

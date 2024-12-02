@@ -4,34 +4,22 @@
 #include <ostream>
 #include <vector>
 
+#include "barretenberg/vm2/common/aztec_types.hpp"
 #include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/common/opcodes.hpp"
+#include "barretenberg/vm2/simulation/serialization.hpp"
 
 namespace bb::avm::simulation {
 
 struct ExecutionEvent {
     uint32_t pc;
     ExecutionOpCode opcode;
-    // FIXME: this should also accomodate immediates, etc.
-    std::vector<MemoryAddress> operands;
-    std::vector<MemoryAddress> resolved_operands;
+    ContractClassId contract_class_id;
+    std::vector<Operand> operands;
+    std::vector<Operand> resolved_operands;
 
     // Needed for testing matchers.
     bool operator==(const ExecutionEvent& other) const = default;
 };
-
-inline std::ostream& operator<<(std::ostream& os, const ExecutionEvent& s)
-{
-    os << "ExecutionEvent{pc=" << s.pc << ", opcode=" << s.opcode << ", operands=[";
-    for (const auto& operand : s.operands) {
-        os << operand << ", ";
-    }
-    os << "], resolved_operands=[";
-    for (const auto& resolved_operand : s.resolved_operands) {
-        os << resolved_operand << ", ";
-    }
-    os << "]}";
-    return os;
-}
 
 } // namespace bb::avm::simulation

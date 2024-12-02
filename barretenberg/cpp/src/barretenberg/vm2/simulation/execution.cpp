@@ -24,12 +24,13 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
     // TODO: Maybe this should be done in a call gadget?
     // I can't do much more than resolve with the current event.
     const auto [contract_address, _] = memory.get(addr);
+    std::vector<FF> calldata = {};
 
     // TODO: should we do this in the main run() loop?
     // FIXME: I'm repeating everything that is in the run() loop and I don't like it.
     auto nested_context = context_provider.make(std::move(contract_address),
                                                 /*msg_sender=*/context.get_address(),
-                                                /*calldata=*/{},
+                                                /*calldata=*/calldata,
                                                 /*is_static=*/false);
     enter_context(std::move(nested_context));
 }
@@ -90,12 +91,11 @@ void Execution::run()
 
         dispatch_opcode(opcode, resolved_operands);
 
-        events.emit({
-            .pc = pc,
-            .opcode = opcode,
-            .operands = {},         // operands,
-            .resolved_operands = {} // resolved_operands
-        });
+        events.emit({ .pc = pc,
+                      .opcode = opcode,
+                      .contract_class_id = context.get_bytecode_manager().get_class_id(),
+                      .operands = instruction.operands,
+                      .resolved_operands = resolved_operands });
 
         context.set_pc(context.get_next_pc());
     }
