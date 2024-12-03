@@ -58,7 +58,7 @@ export class TestBroker implements ProvingJobProducer {
     prover: ServerCircuitProver,
     private proofStore: ProofStore = new InlineProofStore(),
   ) {
-    this.agents = times(agentCount, () => new ProvingAgent(this.broker, proofStore, prover));
+    this.agents = times(agentCount, () => new ProvingAgent(this.broker, proofStore, prover, [], 10));
   }
 
   public async start() {

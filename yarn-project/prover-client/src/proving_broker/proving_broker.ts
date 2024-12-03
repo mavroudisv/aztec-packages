@@ -8,6 +8,7 @@ import {
   type ProvingJobSettledResult,
   type ProvingJobStatus,
   ProvingRequestType,
+  ReportProgressResponse,
 } from '@aztec/circuit-types';
 import { createDebugLogger } from '@aztec/foundation/log';
 import { type PromiseWithResolvers, RunningPromise, promiseWithResolvers } from '@aztec/foundation/promise';
@@ -230,15 +231,16 @@ export class ProvingBroker implements ProvingJobProducer, ProvingJobConsumer {
     this.promises.get(id)!.resolve(result);
   }
 
-  reportProvingJobProgress(
+  async reportProvingJobProgress(
     id: ProvingJobId,
     startedAt: number,
     filter?: ProvingJobFilter,
-  ): Promise<{ job: ProvingJob; time: number } | undefined> {
+  ): Promise<ReportProgressResponse> {
     const job = this.jobsCache.get(id);
     if (!job) {
       this.logger.warn(`Proving job id=${id} does not exist`);
-      return filter ? this.getProvingJob(filter) : Promise.resolve(undefined);
+      const newJob = filter ? await this.getProvingJob(filter) : undefined;
+      return { status: 'abort', ...newJob };
     }
 
     const metadata = this.inProgress.get(id);
@@ -255,7 +257,7 @@ export class ProvingBroker implements ProvingJobProducer, ProvingJobConsumer {
         startedAt,
         lastUpdatedAt: this.timeSource(),
       });
-      return Promise.resolve(undefined);
+      return { status: 'continue' };
     } else if (startedAt <= metadata.startedAt) {
       if (startedAt < metadata.startedAt) {
         this.logger.debug(
@@ -266,16 +268,17 @@ export class ProvingBroker implements ProvingJobProducer, ProvingJobConsumer {
       }
       metadata.startedAt = startedAt;
       metadata.lastUpdatedAt = now;
-      return Promise.resolve(undefined);
+      return Promise.resolve({ status: 'continue' });
     } else if (filter) {
       this.logger.warn(
         `Proving job id=${id} type=${
           ProvingRequestType[job.type]
         } already being worked on by another agent. Sending new one`,
       );
-      return this.getProvingJob(filter);
+      const newJob = await this.getProvingJob();
+      return { status: 'abort', ...newJob };
     } else {
-      return Promise.resolve(undefined);
+      return Promise.resolve({ status: 'abort' });
     }
   }
 
