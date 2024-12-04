@@ -32,9 +32,10 @@ void Execution::call(ContextInterface& context, MemoryAddress addr)
                                                 /*msg_sender=*/context.get_address(),
                                                 /*calldata=*/calldata,
                                                 /*is_static=*/false);
-    enter_context(std::move(nested_context));
+    context_stack.push(std::move(nested_context));
 }
 
+// TODO: This will need to happen in its own gadget in any case.
 void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryAddress ret_size_offset)
 {
     auto& memory = context.get_memory();
@@ -46,7 +47,7 @@ void Execution::ret(ContextInterface& context, MemoryAddress ret_offset, MemoryA
     context_stack.pop();
     std::vector returndata(values.begin(), values.end());
     if (!context_stack.empty()) {
-        auto& context = current_context();
+        auto& context = context_stack.current();
         // TODO: We'll need more than just the return data. E.g., the space id, address and size.
         context.set_nested_returndata(std::move(returndata));
     } else {
@@ -74,15 +75,15 @@ ExecutionResult Execution::execute(AztecAddress contract_address,
                                    bool is_static)
 {
     auto context = context_provider.make(contract_address, msg_sender, calldata, is_static);
-    enter_context(std::move(context));
-    run();
+    context_stack.push(std::move(context));
+    execution_loop();
     return std::move(top_level_result);
 }
 
-void Execution::run()
+void Execution::execution_loop()
 {
     while (!context_stack.empty()) {
-        auto& context = current_context();
+        auto& context = context_stack.current();
 
         auto pc = context.get_pc();
         auto [instruction, read_bytes] = context.get_bytecode_manager().read_instruction(pc);
@@ -132,7 +133,7 @@ inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&
     auto operand_indices = std::make_index_sequence<sizeof...(Ts)>{};
     using types = std::tuple<Ts...>;
     [f, this, &resolved_operands]<std::size_t... Is>(std::index_sequence<Is...>) {
-        (this->*f)(current_context(), static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
+        (this->*f)(context_stack.current(), static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
     }(operand_indices);
 }
 
@@ -176,7 +177,7 @@ std::pair<ExecutionOpCode, std::vector<Operand>> Execution::resolve_instruction(
         addressing.resolve(instruction.indirect,
                            std::vector<MemoryAddress>(instruction.operands.begin(),
                                                       instruction.operands.begin() + num_addresses_to_resolve),
-                           current_context().get_memory());
+                           context_stack.current().get_memory());
     auto resolved_operands = instruction.operands;
     for (size_t i = 0; i < static_cast<size_t>(num_addresses_to_resolve); i++) {
         resolved_operands[i] = Operand(resolved_addresses[i]);
