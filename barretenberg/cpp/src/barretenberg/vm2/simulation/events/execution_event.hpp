@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <ostream>
 #include <vector>
 
 #include "barretenberg/vm2/common/aztec_types.hpp"
@@ -16,11 +15,17 @@ struct ExecutionEvent {
     uint32_t pc;
     ContractClassId contract_class_id;
     Instruction wire_instruction;
-    InstructionSpec instruction_spec; // TODO: consider just having a reference.
+    const InstructionSpec& instruction_spec;
     ExecutionOpCode opcode;
     std::vector<Operand> resolved_operands;
 
-    bool operator==(const ExecutionEvent& other) const = default;
+    // We need to write this manually only because there struct contains a reference.
+    bool operator==(const ExecutionEvent& other) const
+    {
+        return pc == other.pc && contract_class_id == other.contract_class_id &&
+               wire_instruction == other.wire_instruction && instruction_spec == other.instruction_spec &&
+               opcode == other.opcode && resolved_operands == other.resolved_operands;
+    }
 };
 
 } // namespace bb::avm::simulation

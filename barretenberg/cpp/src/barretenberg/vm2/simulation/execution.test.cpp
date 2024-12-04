@@ -11,6 +11,7 @@
 #include "barretenberg/vm2/simulation/context.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/events/execution_event.hpp"
+#include "barretenberg/vm2/simulation/lib/instruction_info.hpp"
 #include "barretenberg/vm2/simulation/lib/serialization.hpp"
 #include "barretenberg/vm2/simulation/memory.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_addressing.hpp"
@@ -18,7 +19,6 @@
 #include "barretenberg/vm2/simulation/testing/mock_bytecode_manager.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_context.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_context_stack.hpp"
-#include "barretenberg/vm2/simulation/testing/mock_instruction_info.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_memory.hpp"
 
 namespace bb::avm::simulation {
@@ -39,7 +39,7 @@ class AvmSimulationExecutionTest : public ::testing::Test {
     StrictMock<MockMemory> memory;
     StrictMock<MockContextProvider> context_provider;
     StrictMock<MockContextStack> context_stack;
-    StrictMock<MockInstructionInfoDB> instruction_info_db;
+    InstructionInfoDB instruction_info_db; // Using the real thing.
     StrictMock<MockContext> context;
     EventEmitter<ExecutionEvent> execution_event_emitter;
     Execution execution =

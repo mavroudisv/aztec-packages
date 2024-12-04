@@ -59,9 +59,9 @@ template <typename S> EventsContainer simulate_with_settings()
     ContextProvider context_provider(bytecode_manager, memory_emitter);
 
     Alu alu(alu_emitter);
-    Addressing addressing(addressing_emitter);
-    ContextStack context_stack;
     InstructionInfoDB instruction_info_db;
+    Addressing addressing(instruction_info_db, addressing_emitter);
+    ContextStack context_stack;
     Execution execution(alu, addressing, context_provider, context_stack, instruction_info_db, execution_emitter);
     TxExecution tx_execution(execution);
 

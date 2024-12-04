@@ -35,6 +35,8 @@ class Operand {
     explicit operator uint128_t() const;
     explicit operator FF() const;
 
+    bool operator==(const Operand& other) const = default;
+
   private:
     std::variant<uint8_t, uint16_t, uint32_t, uint64_t, uint128_t, FF> value;
 };

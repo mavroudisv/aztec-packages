@@ -41,10 +41,10 @@ class ExecutionInterface {
 class Execution : public ExecutionInterface {
   public:
     Execution(AluInterface& alu,
-              AddressingBase& addressing,
+              AddressingInterface& addressing,
               ContextProviderInterface& context_provider,
               ContextStackInterface& context_stack,
-              InstructionInfoDBInterface& instruction_info_db,
+              const InstructionInfoDBInterface& instruction_info_db,
               EventEmitterInterface<ExecutionEvent>& event_emitter)
         : context_provider(context_provider)
         , context_stack(context_stack)
@@ -75,11 +75,11 @@ class Execution : public ExecutionInterface {
 
     ContextProviderInterface& context_provider;
     ContextStackInterface& context_stack;
-    InstructionInfoDBInterface& instruction_info_db;
+    const InstructionInfoDBInterface& instruction_info_db;
     ExecutionResult top_level_result;
 
     AluInterface& alu;
-    AddressingBase& addressing;
+    AddressingInterface& addressing;
     EventEmitterInterface<ExecutionEvent>& events;
 };
 

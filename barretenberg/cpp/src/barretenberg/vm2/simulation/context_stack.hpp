@@ -21,6 +21,8 @@ class ContextStackInterface {
 
 class ContextStack : public ContextStackInterface {
   public:
+    // TODO: When we push a new context, we'll have to emit an event with the serialized CURRENT top (if any).
+    // This would create a row in the subtrace, with the snapshot of the context to come back to once we pop.
     void push(std::unique_ptr<ContextInterface> context) override { stack.push(std::move(context)); }
 
     void pop() override { stack.pop(); }

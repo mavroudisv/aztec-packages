@@ -8,43 +8,31 @@
 #include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/simulation/events/addressing_event.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
+#include "barretenberg/vm2/simulation/lib/instruction_info.hpp"
+#include "barretenberg/vm2/simulation/lib/serialization.hpp"
 #include "barretenberg/vm2/simulation/memory.hpp"
 
 namespace bb::avm::simulation {
 
-class AddressingBase {
+class AddressingInterface {
   public:
-    virtual ~AddressingBase() = default;
+    virtual ~AddressingInterface() = default;
     // We need this method to be non-templated so that we can mock it.
-    virtual std::vector<MemoryAddress> resolve(uint16_t indirect,
-                                               std::span<const MemoryAddress> offsets,
-                                               MemoryInterface& memory) const = 0;
-
-    // Convenience function that returns an array so that it can be destructured.
-    // template <size_t N>
-    // std::array<MemoryAddress, N> resolve(uint16_t indirect,
-    //                                      const std::array<MemoryAddress, N>& offsets,
-    //                                      MemoryInterface& memory) const
-    // {
-    //     assert(offsets.size() == N);
-    //     auto resolved = resolve_(indirect, std::vector(offsets.begin(), offsets.end()), memory);
-    //     std::array<MemoryAddress, N> result;
-    //     std::copy(resolved.begin(), resolved.end(), result.begin());
-    //     return result;
-    // }
+    virtual std::vector<Operand> resolve(const Instruction& instruction, MemoryInterface& memory) const = 0;
 };
 
-class Addressing final : public AddressingBase {
+class Addressing final : public AddressingInterface {
   public:
-    Addressing(EventEmitterInterface<AddressingEvent>& event_emitter)
-        : events(event_emitter)
+    Addressing(const InstructionInfoDBInterface& instruction_info_db,
+               EventEmitterInterface<AddressingEvent>& event_emitter)
+        : instruction_info_db(instruction_info_db)
+        , events(event_emitter)
     {}
 
-    std::vector<MemoryAddress> resolve(uint16_t indirect,
-                                       std::span<const MemoryAddress> offsets,
-                                       MemoryInterface& memory) const override;
+    std::vector<Operand> resolve(const Instruction& instruction, MemoryInterface& memory) const override;
 
   private:
+    const InstructionInfoDBInterface& instruction_info_db;
     EventEmitterInterface<AddressingEvent>& events;
 };
 

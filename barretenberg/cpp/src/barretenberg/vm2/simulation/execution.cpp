@@ -87,8 +87,8 @@ void Execution::execution_loop()
         auto pc = context.get_pc();
         Instruction instruction = context.get_bytecode_manager().read_instruction(pc);
         ExecutionOpCode opcode = instruction_info_db.map_wire_opcode_to_execution_opcode(instruction.opcode);
-        InstructionSpec spec = instruction_info_db.get(opcode);
-        std::vector<Operand> resolved_operands = resolve_operands(instruction, spec);
+        const InstructionSpec& spec = instruction_info_db.get(opcode); // Unused for now.
+        std::vector<Operand> resolved_operands = addressing.resolve(instruction, context.get_memory());
         context.set_next_pc(pc + instruction.size_in_bytes);
 
         dispatch_opcode(opcode, resolved_operands);
@@ -96,9 +96,9 @@ void Execution::execution_loop()
         events.emit({ .pc = pc,
                       .contract_class_id = context.get_bytecode_manager().get_class_id(),
                       .wire_instruction = std::move(instruction),
-                      .instruction_spec = std::move(spec),
+                      .instruction_spec = spec,
                       .opcode = opcode,
-                      .resolved_operands = resolved_operands });
+                      .resolved_operands = std::move(resolved_operands) });
 
         context.set_pc(context.get_next_pc());
     }
@@ -137,22 +137,6 @@ inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&
     [f, this, &resolved_operands]<std::size_t... Is>(std::index_sequence<Is...>) {
         (this->*f)(context_stack.current(), static_cast<std::tuple_element_t<Is, types>>(resolved_operands[Is])...);
     }(operand_indices);
-}
-
-std::vector<Operand> Execution::resolve_operands(const Instruction& instruction, const InstructionSpec& spec)
-{
-    assert(instruction.operands.size() <= spec.num_addresses);
-    // TODO: catch failure.
-    std::vector<MemoryAddress> resolved_addresses = addressing.resolve(
-        instruction.indirect,
-        std::vector<MemoryAddress>(instruction.operands.begin(), instruction.operands.begin() + spec.num_addresses),
-        context_stack.current().get_memory());
-    auto resolved_operands = instruction.operands;
-    for (size_t i = 0; i < static_cast<size_t>(spec.num_addresses); i++) {
-        resolved_operands[i] = Operand(resolved_addresses[i]);
-    }
-
-    return resolved_operands;
 }
 
 } // namespace bb::avm::simulation

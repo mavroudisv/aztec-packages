@@ -12,13 +12,13 @@ class InstructionInfoDBInterface {
   public:
     virtual ~InstructionInfoDBInterface() = default;
 
-    virtual InstructionSpec get(ExecutionOpCode opcode) const = 0;
+    virtual const InstructionSpec& get(ExecutionOpCode opcode) const = 0;
     virtual ExecutionOpCode map_wire_opcode_to_execution_opcode(WireOpCode opcode) const = 0;
 };
 
 class InstructionInfoDB : public InstructionInfoDBInterface {
   public:
-    InstructionSpec get(ExecutionOpCode opcode) const override { return INSTRUCTION_SPEC.at(opcode); }
+    const InstructionSpec& get(ExecutionOpCode opcode) const override { return INSTRUCTION_SPEC.at(opcode); }
     ExecutionOpCode map_wire_opcode_to_execution_opcode(WireOpCode opcode) const override
     {
         return OPCODE_MAP.at(opcode);
