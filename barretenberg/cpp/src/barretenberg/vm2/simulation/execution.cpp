@@ -17,17 +17,14 @@ void Execution::add(ContextInterface& context, MemoryAddress a_addr, MemoryAddre
     alu.add(context, a_addr, b_addr, dst_addr);
 }
 
+// TODO: This will need to happen in its own gadget in any case.
 void Execution::call(ContextInterface& context, MemoryAddress addr)
 {
     auto& memory = context.get_memory();
 
-    // TODO: Maybe this should be done in a call gadget?
-    // I can't do much more than resolve with the current event.
     const auto [contract_address, _] = memory.get(addr);
     std::vector<FF> calldata = {};
 
-    // TODO: should we do this in the main run() loop?
-    // FIXME: I'm repeating everything that is in the run() loop and I don't like it.
     auto nested_context = context_provider.make(std::move(contract_address),
                                                 /*msg_sender=*/context.get_address(),
                                                 /*calldata=*/calldata,

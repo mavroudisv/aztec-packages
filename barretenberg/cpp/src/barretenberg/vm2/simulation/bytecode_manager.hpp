@@ -48,8 +48,6 @@ class TxBytecodeManager : public TxBytecodeManagerInterface {
     ContractClassId get_class_id(BytecodeId bytecode_id) const override;
 
   private:
-    static FF compute_public_bytecode_commitment(std::span<const uint8_t> bytecode);
-
     struct BytecodeInfo {
         std::vector<uint8_t> bytecode;
         ContractClassId class_id;
