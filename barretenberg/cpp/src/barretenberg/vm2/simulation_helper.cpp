@@ -14,6 +14,7 @@
 #include "barretenberg/vm2/simulation/context_stack.hpp"
 #include "barretenberg/vm2/simulation/execution.hpp"
 #include "barretenberg/vm2/simulation/lib/avm_inputs.hpp"
+#include "barretenberg/vm2/simulation/lib/instruction_info.hpp"
 #include "barretenberg/vm2/simulation/lib/raw_data_db.hpp"
 #include "barretenberg/vm2/simulation/tx_execution.hpp"
 
@@ -60,7 +61,8 @@ template <typename S> EventsContainer simulate_with_settings()
     Alu alu(alu_emitter);
     Addressing addressing(addressing_emitter);
     ContextStack context_stack;
-    Execution execution(alu, addressing, context_provider, context_stack, execution_emitter);
+    InstructionInfoDB instruction_info_db;
+    Execution execution(alu, addressing, context_provider, context_stack, instruction_info_db, execution_emitter);
     TxExecution tx_execution(execution);
 
     std::vector<PublicExecutionRequest> enqueued_calls = {

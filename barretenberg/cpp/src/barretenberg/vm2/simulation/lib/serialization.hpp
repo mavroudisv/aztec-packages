@@ -43,12 +43,9 @@ struct Instruction {
     WireOpCode opcode;
     uint16_t indirect;
     std::vector<Operand> operands;
+    uint8_t size_in_bytes;
 
-    Instruction() = delete;
-    Instruction(WireOpCode opcode, uint16_t indirect, std::vector<Operand> operands)
-        : opcode(opcode)
-        , indirect(indirect)
-        , operands(std::move(operands)){};
+    bool operator==(const Instruction& other) const = default;
 };
 
 /**
@@ -59,8 +56,8 @@ struct Instruction {
  * @param bytecode The bytecode to be parsed as a vector of bytes/uint8_t
  * @param pos Bytecode position
  * @throws runtime_error exception when the bytecode is invalid or pos is out-of-range
- * @return The instruction and number of bytes read
+ * @return The instruction
  */
-std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<const uint8_t> bytecode, size_t pos);
+Instruction decode_instruction(std::span<const uint8_t> bytecode, size_t pos);
 
 } // namespace bb::avm::simulation

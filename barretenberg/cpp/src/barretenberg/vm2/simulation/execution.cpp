@@ -1,9 +1,11 @@
 #include "barretenberg/vm2/simulation/execution.hpp"
 
+#include <algorithm>
 #include <concepts>
 #include <cstdint>
 #include <functional>
 
+#include "barretenberg/vm2/common/instruction_spec.hpp"
 #include "barretenberg/vm2/common/memory_types.hpp"
 #include "barretenberg/vm2/common/opcodes.hpp"
 #include "barretenberg/vm2/simulation/addressing.hpp"
@@ -83,16 +85,19 @@ void Execution::execution_loop()
         auto& context = context_stack.current();
 
         auto pc = context.get_pc();
-        auto [instruction, read_bytes] = context.get_bytecode_manager().read_instruction(pc);
-        auto [opcode, resolved_operands] = resolve_instruction(instruction);
-        context.set_next_pc(pc + read_bytes);
+        Instruction instruction = context.get_bytecode_manager().read_instruction(pc);
+        ExecutionOpCode opcode = instruction_info_db.map_wire_opcode_to_execution_opcode(instruction.opcode);
+        InstructionSpec spec = instruction_info_db.get(opcode);
+        std::vector<Operand> resolved_operands = resolve_operands(instruction, spec);
+        context.set_next_pc(pc + instruction.size_in_bytes);
 
         dispatch_opcode(opcode, resolved_operands);
 
         events.emit({ .pc = pc,
-                      .opcode = opcode,
                       .contract_class_id = context.get_bytecode_manager().get_class_id(),
-                      .operands = instruction.operands,
+                      .wire_instruction = std::move(instruction),
+                      .instruction_spec = std::move(spec),
+                      .opcode = opcode,
                       .resolved_operands = resolved_operands });
 
         context.set_pc(context.get_next_pc());
@@ -134,53 +139,20 @@ inline void Execution::call_with_operands(void (Execution::*f)(ContextInterface&
     }(operand_indices);
 }
 
-template <typename... Ts>
-constexpr size_t num_addresses_in_function([[maybe_unused]] void (Execution::*f)(ContextInterface&, Ts...))
+std::vector<Operand> Execution::resolve_operands(const Instruction& instruction, const InstructionSpec& spec)
 {
-    return ((std::is_same_v<Ts, MemoryAddress> ? 1 : 0) + ...);
-}
-
-std::pair<ExecutionOpCode, std::vector<Operand>> Execution::resolve_instruction(const Instruction& instruction)
-{
-    ExecutionOpCode opcode = static_cast<ExecutionOpCode>(-1);
-    int64_t num_addresses_to_resolve = 0;
-
-    switch (instruction.opcode) {
-    case WireOpCode::ADD_8:
-    case WireOpCode::ADD_16:
-        opcode = ExecutionOpCode::ADD;
-        num_addresses_to_resolve = num_addresses_in_function(&Execution::add);
-        break;
-    case WireOpCode::CALL:
-        opcode = ExecutionOpCode::CALL;
-        num_addresses_to_resolve = num_addresses_in_function(&Execution::call);
-        break;
-    case WireOpCode::RETURN:
-        opcode = ExecutionOpCode::RETURN;
-        num_addresses_to_resolve = num_addresses_in_function(&Execution::ret);
-        break;
-    case WireOpCode::JUMPI_32:
-        opcode = ExecutionOpCode::JUMPI;
-        num_addresses_to_resolve = num_addresses_in_function(&Execution::jumpi);
-        break;
-    default:
-        (void)0;
-        // throw std::runtime_error("Execution cannot handle opcode.");
-    }
-
-    // By this point we assume that the opcode is one of the valid execution opcodes.
+    assert(instruction.operands.size() <= spec.num_addresses);
     // TODO: catch failure.
-    auto resolved_addresses =
-        addressing.resolve(instruction.indirect,
-                           std::vector<MemoryAddress>(instruction.operands.begin(),
-                                                      instruction.operands.begin() + num_addresses_to_resolve),
-                           context_stack.current().get_memory());
+    std::vector<MemoryAddress> resolved_addresses = addressing.resolve(
+        instruction.indirect,
+        std::vector<MemoryAddress>(instruction.operands.begin(), instruction.operands.begin() + spec.num_addresses),
+        context_stack.current().get_memory());
     auto resolved_operands = instruction.operands;
-    for (size_t i = 0; i < static_cast<size_t>(num_addresses_to_resolve); i++) {
+    for (size_t i = 0; i < static_cast<size_t>(spec.num_addresses); i++) {
         resolved_operands[i] = Operand(resolved_addresses[i]);
     }
 
-    return { opcode, std::move(resolved_operands) };
+    return resolved_operands;
 }
 
 } // namespace bb::avm::simulation

@@ -28,7 +28,7 @@ class TxBytecodeManagerInterface {
     // (2) hashes it if needed.
     virtual BytecodeId get_bytecode(const AztecAddress& address) = 0;
     // Retrieves an instruction and decomposes it if needed.
-    virtual std::pair<Instruction, /*read_bytes*/ uint32_t> read_instruction(BytecodeId bytecode_id, uint32_t pc) = 0;
+    virtual Instruction read_instruction(BytecodeId bytecode_id, uint32_t pc) = 0;
     // Retrieves the class id of a bytecode, in case you need it.
     virtual ContractClassId get_class_id(BytecodeId bytecode_id) const = 0;
 };
@@ -44,7 +44,7 @@ class TxBytecodeManager : public TxBytecodeManagerInterface {
     {}
 
     BytecodeId get_bytecode(const AztecAddress& address) override;
-    std::pair<Instruction, /*read_bytes*/ uint32_t> read_instruction(BytecodeId bytecode_id, uint32_t pc) override;
+    Instruction read_instruction(BytecodeId bytecode_id, uint32_t pc) override;
     ContractClassId get_class_id(BytecodeId bytecode_id) const override;
 
   private:
@@ -67,7 +67,7 @@ class BytecodeManagerInterface {
   public:
     virtual ~BytecodeManagerInterface() = default;
 
-    virtual std::pair<Instruction, /*read_bytes*/ uint32_t> read_instruction(uint32_t pc) const = 0;
+    virtual Instruction read_instruction(uint32_t pc) const = 0;
     virtual ContractClassId get_class_id() const = 0;
 };
 
@@ -78,7 +78,7 @@ class BytecodeManager : public BytecodeManagerInterface {
         , tx_bytecode_manager(tx_bytecode_manager)
     {}
 
-    std::pair<Instruction, /*read_bytes*/ uint32_t> read_instruction(uint32_t pc) const override
+    Instruction read_instruction(uint32_t pc) const override
     {
         return tx_bytecode_manager.read_instruction(bytecode_id, pc);
     }

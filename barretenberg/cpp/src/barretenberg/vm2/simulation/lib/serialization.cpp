@@ -277,7 +277,7 @@ Operand::operator FF() const
     }
 }
 
-std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
+Instruction decode_instruction(std::span<const uint8_t> bytecode, size_t pos)
 {
     const auto bytecode_length = bytecode.size();
     const auto starting_pos = pos;
@@ -397,7 +397,10 @@ std::pair<Instruction, /*read_bytes*/ uint32_t> decode_instruction(std::span<con
         pos += operand_size;
     }
 
-    return { { opcode, indirect, std::move(operands) }, static_cast<uint32_t>(pos - starting_pos) };
+    return { .opcode = opcode,
+             .indirect = indirect,
+             .operands = std::move(operands),
+             .size_in_bytes = static_cast<uint8_t>(pos - starting_pos) };
 };
 
 } // namespace bb::avm::simulation

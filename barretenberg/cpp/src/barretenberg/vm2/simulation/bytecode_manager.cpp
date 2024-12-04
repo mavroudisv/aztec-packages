@@ -34,7 +34,7 @@ BytecodeId TxBytecodeManager::get_bytecode(const AztecAddress& address)
     return bytecode_id;
 }
 
-std::pair<Instruction, uint32_t> TxBytecodeManager::read_instruction(BytecodeId bytecode_id, uint32_t pc)
+Instruction TxBytecodeManager::read_instruction(BytecodeId bytecode_id, uint32_t pc)
 {
     auto it = bytecodes.find(bytecode_id);
     if (it == bytecodes.end()) {
@@ -43,12 +43,11 @@ std::pair<Instruction, uint32_t> TxBytecodeManager::read_instruction(BytecodeId 
 
     const auto& bytecode = it->second.bytecode;
     // TODO: catch errors etc.
-    auto instruction_and_bytes = decode_instruction(bytecode, pc);
+    Instruction instruction = decode_instruction(bytecode, pc);
 
-    decomposition_events.emit(
-        { .class_id = it->second.class_id, .pc = pc, .instruction = instruction_and_bytes.first });
+    decomposition_events.emit({ .class_id = it->second.class_id, .pc = pc, .instruction = instruction });
 
-    return instruction_and_bytes;
+    return instruction;
 }
 
 ContractClassId TxBytecodeManager::get_class_id(BytecodeId bytecode_id) const

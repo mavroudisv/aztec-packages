@@ -16,6 +16,7 @@
 #include "barretenberg/vm2/simulation/context_stack.hpp"
 #include "barretenberg/vm2/simulation/events/event_emitter.hpp"
 #include "barretenberg/vm2/simulation/events/execution_event.hpp"
+#include "barretenberg/vm2/simulation/lib/instruction_info.hpp"
 #include "barretenberg/vm2/simulation/lib/serialization.hpp"
 #include "barretenberg/vm2/simulation/memory.hpp"
 
@@ -43,9 +44,11 @@ class Execution : public ExecutionInterface {
               AddressingBase& addressing,
               ContextProviderInterface& context_provider,
               ContextStackInterface& context_stack,
+              InstructionInfoDBInterface& instruction_info_db,
               EventEmitterInterface<ExecutionEvent>& event_emitter)
         : context_provider(context_provider)
         , context_stack(context_stack)
+        , instruction_info_db(instruction_info_db)
         , alu(alu)
         , addressing(addressing)
         , events(event_emitter)
@@ -68,10 +71,11 @@ class Execution : public ExecutionInterface {
     template <typename... Ts>
     void call_with_operands(void (Execution::*f)(ContextInterface&, Ts...),
                             const std::vector<Operand>& resolved_operands);
-    std::pair<ExecutionOpCode, std::vector<Operand>> resolve_instruction(const Instruction& instruction);
+    std::vector<Operand> resolve_operands(const Instruction& instruction, const InstructionSpec& spec);
 
     ContextProviderInterface& context_provider;
     ContextStackInterface& context_stack;
+    InstructionInfoDBInterface& instruction_info_db;
     ExecutionResult top_level_result;
 
     AluInterface& alu;

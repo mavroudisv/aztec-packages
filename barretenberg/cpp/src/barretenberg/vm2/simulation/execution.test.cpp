@@ -18,6 +18,7 @@
 #include "barretenberg/vm2/simulation/testing/mock_bytecode_manager.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_context.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_context_stack.hpp"
+#include "barretenberg/vm2/simulation/testing/mock_instruction_info.hpp"
 #include "barretenberg/vm2/simulation/testing/mock_memory.hpp"
 
 namespace bb::avm::simulation {
@@ -38,10 +39,11 @@ class AvmSimulationExecutionTest : public ::testing::Test {
     StrictMock<MockMemory> memory;
     StrictMock<MockContextProvider> context_provider;
     StrictMock<MockContextStack> context_stack;
-    std::unique_ptr<StrictMock<MockContext>> context_obj = std::make_unique<StrictMock<MockContext>>();
-    StrictMock<MockContext>& context = *context_obj;
+    StrictMock<MockInstructionInfoDB> instruction_info_db;
+    StrictMock<MockContext> context;
     EventEmitter<ExecutionEvent> execution_event_emitter;
-    Execution execution = Execution(alu, addressing, context_provider, context_stack, execution_event_emitter);
+    Execution execution =
+        Execution(alu, addressing, context_provider, context_stack, instruction_info_db, execution_event_emitter);
 };
 
 TEST_F(AvmSimulationExecutionTest, Add)

@@ -22,4 +22,10 @@ const std::unordered_map<ExecutionOpCode, InstructionSpec> INSTRUCTION_SPEC = {
         .gas_cost = { .base_l2 = AVM_JUMPI_BASE_L2_GAS, .base_da = 0, .dyn_l2 = 0, .dyn_da = 0 } } },
 };
 
+const std::unordered_map<WireOpCode, ExecutionOpCode> OPCODE_MAP = {
+    { WireOpCode::ADD_8, ExecutionOpCode::ADD },      { WireOpCode::ADD_16, ExecutionOpCode::ADD },
+    { WireOpCode::CALL, ExecutionOpCode::CALL },      { WireOpCode::RETURN, ExecutionOpCode::RETURN },
+    { WireOpCode::JUMPI_32, ExecutionOpCode::JUMPI },
+};
+
 } // namespace bb::avm
