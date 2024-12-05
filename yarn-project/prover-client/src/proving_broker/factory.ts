@@ -4,7 +4,7 @@ import { AztecLmdbStore } from '@aztec/kv-store/lmdb';
 import { join } from 'path';
 
 import { ProvingBroker } from './proving_broker.js';
-import { ProvingBrokerDatabase } from './proving_broker_database.js';
+import { type ProvingBrokerDatabase } from './proving_broker_database.js';
 import { InMemoryBrokerDatabase } from './proving_broker_database/memory.js';
 import { KVBrokerDatabase } from './proving_broker_database/persisted.js';
 
